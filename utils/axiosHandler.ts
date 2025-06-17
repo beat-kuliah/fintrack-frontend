@@ -1,7 +1,7 @@
 import axios, { AxiosError, AxiosResponse } from "axios";
 import { userTokenKey } from "./contants";
 import { errorHandler } from "./errorHandler";
-import useLogout from "@/app/components/hooks/useLogout";
+import useLogout from "@/components/hooks/useLogout";
 // import useLogout from "@/app/components/hooks/useLogout";
 
 interface AxiosHandlerType {

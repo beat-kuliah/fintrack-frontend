@@ -1,13 +1,13 @@
 "use client";
 
-import Auth from "@/app/components/Auth";
+import AuthSignup from "@/components/AuthSignup";
+import withoutAuth from "@/components/hocs/withoutAuth";
 import { errorHandler } from "@/utils/errorHandler";
 import { authUrl } from "@/utils/network";
 import axios, { AxiosError } from "axios";
 import { useRouter } from "next/navigation";
 import React, { FormEvent, useState } from "react";
 import { toast } from "react-toastify";
-import withoutAuth from "../components/hocs/withoutAuth";
 
 const Register = () => {
   const [loading, setLoading] = useState(false);
@@ -37,7 +37,7 @@ const Register = () => {
   };
 
   return (
-    <Auth
+    <AuthSignup
       onSubmit={onSubmit}
       title="Sign Up"
       loading={loading}
@@ -45,7 +45,7 @@ const Register = () => {
       accountInfoText={{
         initialText: "Have an account?",
         actionLink: "/login",
-        actionText: "login",
+        actionText: "Login",
       }}
     />
   );
