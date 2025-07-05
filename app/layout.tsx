@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import "react-toastify/dist/ReactToastify.css";
-import { REM, Righteous } from "next/font/google";
 import StoreProvider from "@/components/StoreProvider";
 import ToastLayout from "@/components/ToastLayout";
 

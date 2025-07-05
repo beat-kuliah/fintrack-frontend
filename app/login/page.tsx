@@ -7,6 +7,7 @@ import { userTokenKey } from "@/utils/contants";
 import { authUrl } from "@/utils/network";
 import { useRouter } from "next/navigation";
 import React, { FormEvent, useState } from "react";
+import { toast } from "react-toastify";
 
 interface LoginType {
   token: string;
@@ -36,6 +37,7 @@ const Login = () => {
 
     if (response.data) {
       localStorage.setItem(userTokenKey, response.data.token);
+      toast("Login successful", { type: "success" });
       Router.push("/");
     }
   };

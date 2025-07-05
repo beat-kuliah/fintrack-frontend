@@ -28,7 +28,7 @@ interface AuthType {
 const AuthSignup: FC<AuthType> = ({
   title = "Sign Up",
   buttonTitle = "Register",
-  showRemembered,
+  // showRemembered,
   accountInfoText,
   loading,
   onSubmit,

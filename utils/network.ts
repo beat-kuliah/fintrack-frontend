@@ -1,4 +1,5 @@
 const baseUrl = "http://192.168.1.207:8000";
+// const baseUrl = "http://localhost:8000";
 
 export const authUrl = {
   login: `${baseUrl}/auth/login`,

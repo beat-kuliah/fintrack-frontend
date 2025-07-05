@@ -16,6 +16,7 @@ const withoutAuth = <T extends object>(
       } else {
         setChecking(false);
       }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     if (checking) {

@@ -50,6 +50,7 @@ const withAuth = <T extends object>(
 
     useEffect(() => {
       handleAuth();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     if (checking) {

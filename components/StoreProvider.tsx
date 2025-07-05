@@ -3,22 +3,14 @@
 import { createContext, FC, useReducer } from "react";
 import { UserType } from "./hocs/withAuth";
 
-interface ModalState {
-  isOpen: boolean;
-  type: 'alert' | 'confirm' | null;
-}
-
 interface StoreProps {
   activeUser: UserType | null;
-  modalState: ModalState;
+  modalState: boolean;
 }
 
 const initialState: StoreProps = {
   activeUser: null,
-  modalState: {
-    isOpen: false,
-    type: null,
-  },
+  modalState: false,
 };
 
 export const store = createContext<{
@@ -28,19 +20,22 @@ export const store = createContext<{
 
 export enum ActionTypes {
   UpdateUser = "updateUser",
+  SetModalState = "setModalState",
 }
 
-type ActionType = {
-  type: ActionTypes.UpdateUser;
-  payload: UserType | null;
-};
+type ActionType =
+  | { type: ActionTypes.UpdateUser; payload: UserType | null }
+  | { type: ActionTypes.SetModalState; payload: boolean };
 
 const reducer = (state: StoreProps, action: ActionType): StoreProps => {
-  if (action.type === ActionTypes.UpdateUser) {
-    return { ...state, activeUser: action.payload };
+  switch (action.type) {
+    case ActionTypes.UpdateUser:
+      return { ...state, activeUser: action.payload };
+    case ActionTypes.SetModalState:
+      return { ...state, modalState: action.payload };
+    default:
+      return state;
   }
-
-  return state;
 };
 
 const StoreProvider: FC<{ children: React.ReactNode }> = ({ children }) => {
