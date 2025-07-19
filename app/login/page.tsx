@@ -25,7 +25,7 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     const arg = {
-      username: formRef.current?.username.value,
+      email: formRef.current?.email.value,
       password: formRef.current?.password.value,
     };
     const response = await axiosHandler<LoginType>({

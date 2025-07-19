@@ -40,7 +40,7 @@ const AuthLogin: FC<AuthType> = ({
 
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    username: "",
+    email: "",
     password: "",
     rememberMe: false,
   });
@@ -116,18 +116,18 @@ const AuthLogin: FC<AuthType> = ({
             >
               <div>
                 <Label
-                  htmlFor="username"
+                  htmlFor="email"
                   className="text-sm font-medium text-gray-700"
                 >
-                  Username
+                  Email
                 </Label>
                 <Input
-                  id="username"
-                  name="username"
+                  id="email"
+                  name="email"
                   type="text"
-                  value={formData.username}
+                  value={formData.email}
                   onChange={(e) =>
-                    setFormData({ ...formData, username: e.target.value })
+                    setFormData({ ...formData, email: e.target.value })
                   }
                   className="mt-1 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
                   placeholder="Enter your username"

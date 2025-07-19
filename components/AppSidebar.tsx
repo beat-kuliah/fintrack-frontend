@@ -15,6 +15,7 @@ import {
   FileText,
   Bell,
   Receipt,
+  LogOut,
 } from "lucide-react";
 
 import {
@@ -32,6 +33,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { usePathname } from "next/navigation";
+import useLogout from "./hooks/useLogout";
 
 // Navigation items
 const navigationItems = [
@@ -115,6 +117,7 @@ const settingsItems = [
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
+  const { logout } = useLogout();
 
   return (
     <Sidebar variant="inset" {...props}>
@@ -182,6 +185,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <button
+                    type="button"
+                    onClick={logout}
+                    className="flex items-center gap-2 w-full"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span>Logout</span>
+                  </button>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
