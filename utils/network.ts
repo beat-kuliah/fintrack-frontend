@@ -11,9 +11,7 @@ export const userUrl = {
   updateUsername: baseUrl + "/users" + "/name",
 };
 
-export const accountUrl = {
-  list: baseUrl + "/account",
-  add: baseUrl + "/account" + "/create",
-  transfer: baseUrl + "/account" + "/transfer",
-  addMoney: baseUrl + "/account" + "/add-money",
+export const pocketUrl = {
+  list: baseUrl + "/pockets",
+  add: baseUrl + "/pockets",
 };
