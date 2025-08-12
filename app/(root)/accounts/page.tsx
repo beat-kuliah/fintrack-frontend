@@ -29,11 +29,28 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
+import { Skeleton } from "@/components/ui/skeleton"
 import { AppSidebar } from "@/components/AppSidebar"
 import useAxiosHandler from "@/utils/axiosHandler"
 import { pocketUrl } from "@/utils/network"
 
-// Define the account type
+// Define the account type based on API response
+interface ApiAccount {
+  id: number
+  user_id: number
+  name: string
+  account: {
+    String: string
+    Valid: boolean
+  }
+  amount: string
+  account_type: string
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+// Internal account interface for UI
 interface Account {
   id: number
   name: string
@@ -46,7 +63,7 @@ interface Account {
 }
 
 interface ListAccountResponse {
-  data: Account[]
+  data: ApiAccount[]
 }
 
 
@@ -133,7 +150,8 @@ const colors = [
 
 const Accounts = () => {
   const { axiosHandler } = useAxiosHandler();
-  const [accounts, setAccounts] = useState<Account[]>(initialAccountData)
+  const [accounts, setAccounts] = useState<Account[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -150,18 +168,51 @@ const Accounts = () => {
     isActive: true,
   })
 
+  // Function to transform API data to UI format
+  const transformApiAccountToAccount = (apiAccount: ApiAccount): Account => {
+    // Assign colors cyclically based on account ID
+    const colorIndex = (apiAccount.id - 1) % colors.length
+    const assignedColor = colors[colorIndex].value
+    
+    return {
+      id: apiAccount.id,
+      name: apiAccount.name,
+      bank: "DANA", // Default bank name since it's not in API response
+      accountNumber: apiAccount.account.Valid ? apiAccount.account.String : "N/A",
+      balance: parseFloat(apiAccount.amount),
+      type: apiAccount.account_type,
+      color: assignedColor,
+      isActive: apiAccount.is_active,
+    }
+  }
+
   // Get List Account
   useEffect(() => {
-    axiosHandler<Account[]>({
-      method: "GET",
-      url: pocketUrl.list,
-      isAuthorized: true
-    }).then(response => {
-      if (response.data) {
-        console.log(response.data);
-        // setAccounts(response.data);
+    const fetchAccounts = async () => {
+      try {
+        setIsLoading(true)
+        const response = await axiosHandler<ApiAccount[]>({
+          method: "GET",
+          url: pocketUrl.list,
+          isAuthorized: true
+        })
+        
+        if (response.data) {
+          console.log('API Response:', response.data)
+          // Transform API data to UI format
+          const transformedAccounts = response.data.map(transformApiAccountToAccount)
+          setAccounts(transformedAccounts)
+        }
+      } catch (error) {
+        console.error('Error fetching accounts:', error)
+        // Fallback to initial data on error
+        setAccounts(initialAccountData)
+      } finally {
+        setIsLoading(false)
       }
-    });
+    }
+    
+    fetchAccounts()
   }, [])
 
 
@@ -280,116 +331,197 @@ const Accounts = () => {
 
               {/* Summary Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-gray-600">Total Balance</p>
-                          <p className="text-2xl font-bold text-gray-900">
-                            {showBalances ? `Rp${totalBalance.toLocaleString()}` : "••••••••"}
-                          </p>
-                        </div>
-                        <div className="p-2 rounded-full bg-green-100">
-                          <CreditCard className="h-6 w-6 text-green-600" />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
+                {isLoading ? (
+                  // Loading skeletons for summary cards
+                  Array.from({ length: 3 }).map((_, index) => (
+                    <motion.div 
+                      key={`summary-skeleton-${index}`}
+                      initial={{ opacity: 0, y: 20 }} 
+                      animate={{ opacity: 1, y: 0 }} 
+                      transition={{ delay: 0.1 + index * 0.1 }}
+                    >
+                      <Card>
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <Skeleton className="h-4 w-24 mb-2" />
+                              <Skeleton className="h-8 w-32" />
+                            </div>
+                            <Skeleton className="h-10 w-10 rounded-full" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  ))
+                ) : (
+                  // Actual summary cards
+                  <>
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                      <Card>
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-medium text-gray-600">Total Balance</p>
+                              <p className="text-2xl font-bold text-gray-900">
+                                {showBalances ? `Rp${totalBalance.toLocaleString()}` : "••••••••"}
+                              </p>
+                            </div>
+                            <div className="p-2 rounded-full bg-green-100">
+                              <CreditCard className="h-6 w-6 text-green-600" />
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
 
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-gray-600">Active Accounts</p>
-                          <p className="text-2xl font-bold text-gray-900">{activeAccounts}</p>
-                        </div>
-                        <div className="p-2 rounded-full bg-blue-100">
-                          <Building2 className="h-6 w-6 text-blue-600" />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+                      <Card>
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-medium text-gray-600">Active Accounts</p>
+                              <p className="text-2xl font-bold text-gray-900">{activeAccounts}</p>
+                            </div>
+                            <div className="p-2 rounded-full bg-blue-100">
+                              <Building2 className="h-6 w-6 text-blue-600" />
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
 
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-gray-600">Total Accounts</p>
-                          <p className="text-2xl font-bold text-gray-900">{accounts.length}</p>
-                        </div>
-                        <div className="p-2 rounded-full bg-purple-100">
-                          <CreditCard className="h-6 w-6 text-purple-600" />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+                      <Card>
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-medium text-gray-600">Total Accounts</p>
+                              <p className="text-2xl font-bold text-gray-900">{accounts.length}</p>
+                            </div>
+                            <div className="p-2 rounded-full bg-purple-100">
+                              <CreditCard className="h-6 w-6 text-purple-600" />
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  </>
+                )}
               </div>
 
               {/* Accounts Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-                {accounts.map((account, index) => (
+                {isLoading ? (
+                  // Loading skeleton
+                  Array.from({ length: 6 }).map((_, index) => (
+                    <motion.div
+                      key={`skeleton-${index}`}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 + index * 0.05 }}
+                    >
+                      <Card className="relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-full h-2 bg-gray-200" />
+                        <CardHeader className="pb-2">
+                          <div className="flex items-center justify-between">
+                            <Skeleton className="h-6 w-32" />
+                            <div className="flex items-center gap-1">
+                              <Skeleton className="h-8 w-8 rounded" />
+                              <Skeleton className="h-8 w-8 rounded" />
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 mt-2">
+                            <Skeleton className="h-5 w-16 rounded-full" />
+                            <Skeleton className="h-5 w-12 rounded-full" />
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          <div>
+                            <Skeleton className="h-4 w-20 mb-1" />
+                            <Skeleton className="h-4 w-28" />
+                          </div>
+                          <div className="pt-2 border-t">
+                            <Skeleton className="h-4 w-16 mb-1" />
+                            <Skeleton className="h-6 w-24" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  ))
+                ) : accounts.length > 0 ? (
+                  // Actual account data
+                  accounts.map((account, index) => (
+                    <motion.div
+                      key={account.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.4 + index * 0.1 }}
+                    >
+                      <Card className={`relative overflow-hidden ${!account.isActive ? "opacity-60" : ""}`}>
+                        <div className={`absolute top-0 left-0 w-full h-2 ${account.color}`} />
+                        <CardHeader className="pb-2">
+                          <div className="flex items-center justify-between">
+                            <CardTitle className="text-lg font-semibold">{account.name}</CardTitle>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                onClick={() => openEditModal(account)}
+                              >
+                                <Edit2 className="h-4 w-4 text-gray-500" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                                onClick={() => openDeleteDialog(account)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-xs">
+                              {account.type}
+                            </Badge>
+                            <Badge variant={account.isActive ? "default" : "secondary"} className="text-xs">
+                              {account.isActive ? "Active" : "Inactive"}
+                            </Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          <div>
+                            <p className="text-sm text-gray-600">{account.bank}</p>
+                            <p className="text-sm font-mono text-gray-500">
+                              {showBalances ? account.accountNumber : maskAccountNumber(account.accountNumber)}
+                            </p>
+                          </div>
+                          <div className="pt-2 border-t">
+                            <p className="text-sm text-gray-600">Balance</p>
+                            <p className="text-xl font-bold text-gray-900">
+                              {showBalances ? `Rp${account.balance.toLocaleString()}` : "••••••••"}
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  ))
+                ) : (
+                  // Empty state
                   <motion.div
-                    key={account.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4 + index * 0.1 }}
+                    className="col-span-full flex flex-col items-center justify-center py-12 text-center"
                   >
-                    <Card className={`relative overflow-hidden ${!account.isActive ? "opacity-60" : ""}`}>
-                      <div className={`absolute top-0 left-0 w-full h-2 ${account.color}`} />
-                      <CardHeader className="pb-2">
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="text-lg font-semibold">{account.name}</CardTitle>
-                          <div className="flex items-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0"
-                              onClick={() => openEditModal(account)}
-                            >
-                              <Edit2 className="h-4 w-4 text-gray-500" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
-                              onClick={() => openDeleteDialog(account)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="text-xs">
-                            {account.type}
-                          </Badge>
-                          <Badge variant={account.isActive ? "default" : "secondary"} className="text-xs">
-                            {account.isActive ? "Active" : "Inactive"}
-                          </Badge>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        <div>
-                          <p className="text-sm text-gray-600">{account.bank}</p>
-                          <p className="text-sm font-mono text-gray-500">
-                            {showBalances ? account.accountNumber : maskAccountNumber(account.accountNumber)}
-                          </p>
-                        </div>
-                        <div className="pt-2 border-t">
-                          <p className="text-sm text-gray-600">Balance</p>
-                          <p className="text-xl font-bold text-gray-900">
-                            {showBalances ? `Rp${account.balance.toLocaleString()}` : "••••••••"}
-                          </p>
-                        </div>
-                      </CardContent>
-                    </Card>
+                    <Building2 className="h-12 w-12 text-gray-400 mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-600 mb-2">No accounts found</h3>
+                    <p className="text-gray-500 mb-4">Get started by adding your first account</p>
+                    <Button onClick={() => setIsAddModalOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white">
+                      <Plus className="h-4 w-4 mr-2" /> Add Account
+                    </Button>
                   </motion.div>
-                ))}
+                )}
               </div>
             </div>
           </div>
