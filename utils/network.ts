@@ -9,6 +9,7 @@ export const authUrl = {
 export const userUrl = {
   me: baseUrl + "/users" + "/me",
   updateUsername: baseUrl + "/users" + "/name",
+  updateHideBalance: baseUrl + "/users/hide-balance"
 };
 
 export const pocketUrl = {

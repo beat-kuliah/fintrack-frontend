@@ -32,7 +32,8 @@ import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { AppSidebar } from "@/components/AppSidebar"
 import useAxiosHandler from "@/utils/axiosHandler"
-import { pocketUrl } from "@/utils/network"
+import { pocketUrl, userUrl } from "@/utils/network"
+import { userShowBalanceKey } from "@/utils/contants"
 
 // Define the account type based on API response
 interface ApiAccount {
@@ -65,61 +66,6 @@ interface Account {
 interface ListAccountResponse {
   data: ApiAccount[]
 }
-
-
-// Initial account data
-const initialAccountData: Account[] = [
-  {
-    id: 1,
-    name: "Primary Checking",
-    bank: "Bank BCA",
-    accountNumber: "1234567890",
-    balance: 4200000,
-    type: "Checking",
-    color: "bg-blue-500",
-    isActive: true,
-  },
-  {
-    id: 2,
-    name: "Savings Account",
-    bank: "Bank Jago",
-    accountNumber: "0987654321",
-    balance: 5550000,
-    type: "Savings",
-    color: "bg-purple-500",
-    isActive: true,
-  },
-  {
-    id: 3,
-    name: "Emergency Fund",
-    bank: "Bank BNI",
-    accountNumber: "1122334455",
-    balance: 4800000,
-    type: "Savings",
-    color: "bg-green-500",
-    isActive: true,
-  },
-  {
-    id: 4,
-    name: "Investment Account",
-    bank: "Bank Mandiri",
-    accountNumber: "5566778899",
-    balance: 4500000,
-    type: "Investment",
-    color: "bg-red-500",
-    isActive: true,
-  },
-  {
-    id: 5,
-    name: "Business Account",
-    bank: "Bank CIMB",
-    accountNumber: "9988776655",
-    balance: 2300000,
-    type: "Business",
-    color: "bg-orange-500",
-    isActive: false,
-  },
-]
 
 // Available banks
 const banks = [
@@ -168,6 +114,30 @@ const Accounts = () => {
     isActive: true,
   })
 
+  useEffect(() => {
+    const showBalance = localStorage.getItem(userShowBalanceKey);
+    if (showBalance) {
+      setShowBalances(showBalance === "true");
+    }
+  }, [])
+
+  const handleUpdateShowBalance = (value: boolean) => {
+    setShowBalances(value);
+    localStorage.setItem(userShowBalanceKey, value.toString());
+
+    axiosHandler({
+      method: "PATCH",
+      url: userUrl.updateHideBalance,
+      isAuthorized: true,
+      data: {
+        hide_balance: !value,
+      }
+    })
+
+
+  }
+
+
   // Function to transform API data to UI format
   const transformApiAccountToAccount = (apiAccount: ApiAccount): Account => {
     // Assign colors cyclically based on account ID
@@ -206,7 +176,7 @@ const Accounts = () => {
       } catch (error) {
         console.error('Error fetching accounts:', error)
         // Fallback to initial data on error
-        setAccounts(initialAccountData)
+        setAccounts([])
       } finally {
         setIsLoading(false)
       }
@@ -317,7 +287,7 @@ const Accounts = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setShowBalances(!showBalances)}
+                    onClick={() => handleUpdateShowBalance(!showBalances)}
                     className="flex items-center gap-2"
                   >
                     {showBalances ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}

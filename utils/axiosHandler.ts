@@ -7,7 +7,7 @@ import useLogout from "@/components/hooks/useLogout";
 interface AxiosHandlerType {
   method: "GET" | "POST" | "PATCH";
   url: string;
-  data?: { [key: string]: number | string };
+  data?: { [key: string]: number | string | boolean };
   handleError?: boolean;
   isAuthorized?: boolean;
 }

@@ -1,4 +1,4 @@
-import { userTokenKey } from "@/utils/contants";
+import { userShowBalanceKey, userTokenKey } from "@/utils/contants";
 import { userUrl } from "@/utils/network";
 import React, { useContext, useEffect, useState } from "react";
 import { ActionTypes, store } from "../StoreProvider";
@@ -37,6 +37,7 @@ const withAuth = <T extends object>(
           if (res.data) {
             dispatch({ type: ActionTypes.UpdateUser, payload: res.data });
             setChecking(false);
+            localStorage.setItem(userShowBalanceKey, "true");
           } else {
             logout();
           }
