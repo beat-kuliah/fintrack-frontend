@@ -27,10 +27,9 @@ import {
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
-import { AppSidebar } from "@/components/AppSidebar"
 import useAxiosHandler from "@/utils/axiosHandler"
 import { pocketUrl, userUrl } from "@/utils/network"
 import { userShowBalanceKey } from "@/utils/contants"
@@ -61,10 +60,6 @@ interface Account {
   type: string
   color: string
   isActive: boolean
-}
-
-interface ListAccountResponse {
-  data: ApiAccount[]
 }
 
 // Available banks
@@ -183,6 +178,7 @@ const Accounts = () => {
     }
     
     fetchAccounts()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
 
@@ -756,7 +752,7 @@ const Accounts = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Account</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{accountToDelete?.name}"? This action cannot be undone and will remove
+              Are you sure you want to delete &quot;{accountToDelete?.name}&quot;? This action cannot be undone and will remove
               all associated data.
             </AlertDialogDescription>
           </AlertDialogHeader>
