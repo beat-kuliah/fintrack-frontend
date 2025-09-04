@@ -33,6 +33,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import useAxiosHandler from "@/utils/axiosHandler"
 import { pocketUrl, userUrl } from "@/utils/network"
 import { userShowBalanceKey } from "@/utils/contants"
+import { toast } from "react-toastify"
 
 // Define the account type based on API response
 interface ApiAccount {
@@ -72,10 +73,14 @@ const banks = [
   "Bank BRI",
   "Bank Danamon",
   "Bank Permata",
+  "DANA",
+  "GoPay",
+  "OVO",
+  "ShopeePay",
 ]
 
 // Account types
-const accountTypes = ["Checking", "Savings", "Investment", "Business", "Credit Card"]
+const accountTypes = ["Checking", "Savings", "Savings Account", "Investment", "Business", "Credit Card"]
 
 // Available colors
 const colors = [
@@ -163,14 +168,14 @@ const Accounts = () => {
         })
         
         if (response.data) {
-          console.log('API Response:', response.data)
-          // Transform API data to UI format
           const transformedAccounts = response.data.map(transformApiAccountToAccount)
           setAccounts(transformedAccounts)
         }
       } catch (error) {
         console.error('Error fetching accounts:', error)
         // Fallback to initial data on error
+        setAccounts([])
+        toast("Internal Server Error", {type: "error"})
         setAccounts([])
       } finally {
         setIsLoading(false)
@@ -187,40 +192,107 @@ const Accounts = () => {
   const activeAccounts = accounts.filter((account) => account.isActive).length
 
   // Handle adding a new account
-  const handleAddAccount = () => {
-    if (newAccount.name && newAccount.bank && newAccount.accountNumber) {
-      const account: Account = {
-        id: accounts.length + 1,
-        name: newAccount.name,
-        bank: newAccount.bank,
-        accountNumber: newAccount.accountNumber,
-        balance: newAccount.balance || 0,
-        type: newAccount.type || "Checking",
-        color: newAccount.color || "bg-blue-500",
-        isActive: newAccount.isActive !== false,
-      }
+  const handleAddAccount = async () => {
+    // Validate required fields
+    if (!newAccount.name || !newAccount.accountNumber || !newAccount.type) {
+      toast("Please fill in all required fields (Name, Account Number, and Account Type)", { type: "error" })
+      return
+    }
+    
+    if (newAccount.name && newAccount.accountNumber) {
+      try {
+        const requestBody = {
+          name: newAccount.name,
+          account: newAccount.accountNumber,
+          amount: newAccount.balance?.toString() || "0",
+          account_type: newAccount.type || "Checking",
+          is_active: newAccount.isActive || true, 
+        }
 
-      setAccounts([...accounts, account])
-      setIsAddModalOpen(false)
-      setNewAccount({
-        name: "",
-        bank: "",
-        accountNumber: "",
-        balance: 0,
-        type: "Checking",
-        color: "bg-blue-500",
-        isActive: true,
-      })
+        const response = await axiosHandler({
+          method: "POST",
+          url: pocketUrl.add, // Use existing 'add' endpoint
+          data: requestBody,
+          isAuthorized: true
+        })
+        
+        console.log(response.data)
+        if (response.data && typeof response.data === 'object' && 'id' in response.data) {
+          // Transform the API response and add to accounts
+          const newAccountData = transformApiAccountToAccount(response.data as ApiAccount)
+          setAccounts([...accounts, newAccountData])
+          
+          // Close modal and reset form only on success
+          setIsAddModalOpen(false)
+          setNewAccount({
+            name: "",
+            bank: "",
+            accountNumber: "",
+            balance: 0,
+            type: "Checking",
+            color: "bg-blue-500",
+            isActive: true,
+          })
+          
+          toast("Account added successfully", { type: "success" })
+        } else {
+          // API call succeeded but didn't return proper data
+          toast("Failed to add account", { type: "error" })
+        }
+      } catch (error) {
+        toast("Failed to add account", { type: "error" })
+        // Don't update accounts state or close modal on error
+      }
     }
   }
 
   // Handle editing an account
-  const handleEditAccount = () => {
-    if (selectedAccount && selectedAccount.name && selectedAccount.bank && selectedAccount.accountNumber) {
-      const updatedAccounts = accounts.map((account) => (account.id === selectedAccount.id ? selectedAccount : account))
-      setAccounts(updatedAccounts)
-      setIsEditModalOpen(false)
-      setSelectedAccount(null)
+  const handleEditAccount = async () => {
+    // Validate required fields
+    if (!selectedAccount || !selectedAccount.name || !selectedAccount.accountNumber || !selectedAccount.type) {
+      toast("Please fill in all required fields (Name, Account Number, and Account Type)", { type: "error" })
+      return
+    }
+    
+    if (selectedAccount && selectedAccount.name && selectedAccount.accountNumber) {
+      try {
+        const requestBody = {
+          name: selectedAccount.name,
+          account: selectedAccount.accountNumber,
+          amount: selectedAccount.balance.toString(),
+          account_type: selectedAccount.type,
+          is_active: selectedAccount.isActive || true,
+        }
+
+        const response = await axiosHandler({
+          method: "PUT", // Use PATCH method
+          url: pocketUrl.update.replace(":id", selectedAccount.id.toString()), // Use correct update endpoint
+          data: requestBody,
+          isAuthorized: true
+        })
+
+        if (response.data && typeof response.data === 'object' && 'id' in response.data) {
+          // Transform the API response and update accounts
+          const updatedAccountData = transformApiAccountToAccount(response.data as ApiAccount)
+          const updatedAccounts = accounts.map((account) => 
+            account.id === selectedAccount.id ? updatedAccountData : account
+          )
+          setAccounts(updatedAccounts)
+          
+          // Close modal and reset state only on success
+          setIsEditModalOpen(false)
+          setSelectedAccount(null)
+          
+          toast("Account updated successfully", { type: "success" })
+        } else {
+          // API call succeeded but didn't return proper data
+          toast("Failed to update account: Invalid response from server", { type: "error" })
+        }
+      } catch (error) {
+        console.error('Error updating account:', error)
+        toast("Failed to update account: Network error or server issue", { type: "error" })
+        // Don't update accounts state or close modal on error
+      }
     }
   }
 
@@ -503,7 +575,7 @@ const Accounts = () => {
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="name" className="text-right text-sm font-medium">
-                Account Name
+                Account Name *
               </Label>
               <Input
                 id="name"
@@ -511,6 +583,7 @@ const Accounts = () => {
                 className="col-span-3"
                 value={newAccount.name}
                 onChange={(e) => setNewAccount({ ...newAccount, name: e.target.value })}
+                required
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -532,7 +605,7 @@ const Accounts = () => {
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="accountNumber" className="text-right text-sm font-medium">
-                Account Number
+                Account Number *
               </Label>
               <Input
                 id="accountNumber"
@@ -540,11 +613,12 @@ const Accounts = () => {
                 className="col-span-3"
                 value={newAccount.accountNumber}
                 onChange={(e) => setNewAccount({ ...newAccount, accountNumber: e.target.value })}
+                required
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="type" className="text-right text-sm font-medium">
-                Account Type
+                Account Type *
               </Label>
               <Select value={newAccount.type} onValueChange={(value) => setNewAccount({ ...newAccount, type: value })}>
                 <SelectTrigger className="col-span-3">
@@ -573,25 +647,19 @@ const Accounts = () => {
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="color" className="text-right text-sm font-medium">
-                Color Theme
+              <Label htmlFor="status" className="text-right text-sm font-medium">
+                Status
               </Label>
               <Select
-                value={newAccount.color}
-                onValueChange={(value) => setNewAccount({ ...newAccount, color: value })}
+                value={newAccount.isActive ? "active" : "inactive"}
+                onValueChange={(value) => setNewAccount({ ...newAccount, isActive: value === "active" })}
               >
                 <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Select color" />
+                  <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
-                  {colors.map((color) => (
-                    <SelectItem key={color.value} value={color.value}>
-                      <div className="flex items-center gap-2">
-                        <div className={`w-4 h-4 rounded-full ${color.value}`} />
-                        {color.name}
-                      </div>
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -618,7 +686,7 @@ const Accounts = () => {
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="edit-name" className="text-right text-sm font-medium">
-                  Account Name
+                  Account Name *
                 </Label>
                 <Input
                   id="edit-name"
@@ -626,6 +694,7 @@ const Accounts = () => {
                   className="col-span-3"
                   value={selectedAccount.name}
                   onChange={(e) => setSelectedAccount({ ...selectedAccount, name: e.target.value })}
+                  required
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
@@ -650,7 +719,7 @@ const Accounts = () => {
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="edit-accountNumber" className="text-right text-sm font-medium">
-                  Account Number
+                  Account Number *
                 </Label>
                 <Input
                   id="edit-accountNumber"
@@ -658,11 +727,12 @@ const Accounts = () => {
                   className="col-span-3"
                   value={selectedAccount.accountNumber}
                   onChange={(e) => setSelectedAccount({ ...selectedAccount, accountNumber: e.target.value })}
+                  required
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="edit-type" className="text-right text-sm font-medium">
-                  Account Type
+                  Account Type *
                 </Label>
                 <Select
                   value={selectedAccount.type}
