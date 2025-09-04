@@ -17,4 +17,21 @@ export const pocketUrl = {
   add: baseUrl + "/pockets",
   update: baseUrl + "/pockets/" + ":id",
   delete: baseUrl + "/pockets/" + ":id",
+  active: baseUrl + "/pockets/active",
+};
+
+export const transactionUrl = {
+  list: baseUrl + "/transactions",
+  create: baseUrl + "/transactions",
+  get: baseUrl + "/transactions/" + ":id",
+  update: baseUrl + "/transactions/" + ":id",
+  delete: baseUrl + "/transactions/" + ":id",
+};
+
+export const spendingAnalyticsUrl = {
+  summary: baseUrl + "/spending-analytics/summary",
+  categoryBreakdown: baseUrl + "/spending-analytics/category-summary",
+  monthlyTrend: baseUrl + "/spending-analytics/monthly-trend",
+  dailyTrend: baseUrl + "/spending-analytics/daily-trend",
+  recent: baseUrl + "/spending-analytics/recent",
 };
