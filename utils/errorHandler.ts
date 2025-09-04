@@ -17,6 +17,8 @@ export const errorHandler = (e: AxiosError) => {
       .join(", ");
   } else if (typeof errorMessage !== "string") {
     errorMessage = JSON.stringify(errorMessage);
+  } else {
+    errorMessage = "Internal Server Error";
   }
 
   toast(errorMessage, { type: "error" });
