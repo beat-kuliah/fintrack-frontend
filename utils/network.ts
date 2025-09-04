@@ -14,4 +14,6 @@ export const userUrl = {
 export const pocketUrl = {
   list: baseUrl + "/pockets",
   add: baseUrl + "/pockets",
+  update: baseUrl + "/pockets/" + ":id",
+  delete: baseUrl + "/pockets/" + ":id",
 };
