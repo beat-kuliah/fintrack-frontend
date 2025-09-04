@@ -261,7 +261,7 @@ const Accounts = () => {
           account: selectedAccount.accountNumber,
           amount: selectedAccount.balance.toString(),
           account_type: selectedAccount.type,
-          is_active: selectedAccount.isActive || true,
+          is_active: selectedAccount.isActive,
         }
 
         const response = await axiosHandler({
@@ -583,25 +583,9 @@ const Accounts = () => {
                 className="col-span-3"
                 value={newAccount.name}
                 onChange={(e) => setNewAccount({ ...newAccount, name: e.target.value })}
+                maxLength={30}
                 required
               />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="bank" className="text-right text-sm font-medium">
-                Bank
-              </Label>
-              <Select value={newAccount.bank} onValueChange={(value) => setNewAccount({ ...newAccount, bank: value })}>
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Select bank" />
-                </SelectTrigger>
-                <SelectContent>
-                  {banks.map((bank) => (
-                    <SelectItem key={bank} value={bank}>
-                      {bank}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="accountNumber" className="text-right text-sm font-medium">
@@ -694,28 +678,9 @@ const Accounts = () => {
                   className="col-span-3"
                   value={selectedAccount.name}
                   onChange={(e) => setSelectedAccount({ ...selectedAccount, name: e.target.value })}
+                  maxLength={30}
                   required
                 />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-bank" className="text-right text-sm font-medium">
-                  Bank
-                </Label>
-                <Select
-                  value={selectedAccount.bank}
-                  onValueChange={(value) => setSelectedAccount({ ...selectedAccount, bank: value })}
-                >
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select bank" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {banks.map((bank) => (
-                      <SelectItem key={bank} value={bank}>
-                        {bank}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="edit-accountNumber" className="text-right text-sm font-medium">
