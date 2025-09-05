@@ -28,10 +28,18 @@ export const transactionUrl = {
   delete: baseUrl + "/transactions/" + ":id",
 };
 
-export const spendingAnalyticsUrl = {
-  summary: baseUrl + "/spending-analytics/summary",
-  categoryBreakdown: baseUrl + "/spending-analytics/category-summary",
-  monthlyTrend: baseUrl + "/spending-analytics/monthly-trend",
-  dailyTrend: baseUrl + "/spending-analytics/daily-trend",
-  recent: baseUrl + "/spending-analytics/recent",
+export const expenseAnalyticsUrl = {
+  summary: baseUrl + "/expense-analytics/summary",
+  categoryBreakdown: baseUrl + "/expense-analytics/category-summary",
+  monthlyTrend: baseUrl + "/expense-analytics/monthly-trend",
+  dailyTrend: baseUrl + "/expense-analytics/daily-trend",
+  recent: baseUrl + "/expense-analytics/recent",
+};
+
+export const incomeAnalyticsUrl = {
+  summary: baseUrl + "/income-analytics/summary",
+  categoryBreakdown: baseUrl + "/income-analytics/category-summary",
+  monthlyTrend: baseUrl + "/income-analytics/monthly-trend",
+  dailyTrend: baseUrl + "/income-analytics/daily-trend",
+  recent: baseUrl + "/income-analytics/recent",
 };

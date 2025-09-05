@@ -60,7 +60,6 @@ interface Account {
   balance: number
   type: string
   color: string
-  isActive: boolean
 }
 
 // Available banks
@@ -108,10 +107,8 @@ const Accounts = () => {
     name: "",
     bank: "",
     accountNumber: "",
-    balance: 0,
     type: "Checking",
     color: "bg-blue-500",
-    isActive: true,
   })
 
   useEffect(() => {
@@ -152,7 +149,6 @@ const Accounts = () => {
       balance: parseFloat(apiAccount.amount),
       type: apiAccount.account_type,
       color: assignedColor,
-      isActive: apiAccount.is_active,
     }
   }
 
@@ -188,8 +184,8 @@ const Accounts = () => {
 
 
   // Calculate total balance
-  const totalBalance = accounts.reduce((sum, account) => sum + (account.isActive ? account.balance : 0), 0)
-  const activeAccounts = accounts.filter((account) => account.isActive).length
+  const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0)
+  const totalAccounts = accounts.length
 
   // Handle adding a new account
   const handleAddAccount = async () => {
@@ -204,9 +200,7 @@ const Accounts = () => {
         const requestBody = {
           name: newAccount.name,
           account: newAccount.accountNumber,
-          amount: newAccount.balance?.toString() || "0",
           account_type: newAccount.type || "Checking",
-          is_active: newAccount.isActive || true, 
         }
 
         const response = await axiosHandler({
@@ -228,10 +222,8 @@ const Accounts = () => {
             name: "",
             bank: "",
             accountNumber: "",
-            balance: 0,
             type: "Checking",
             color: "bg-blue-500",
-            isActive: true,
           })
           
           toast("Account added successfully", { type: "success" })
@@ -259,9 +251,7 @@ const Accounts = () => {
         const requestBody = {
           name: selectedAccount.name,
           account: selectedAccount.accountNumber,
-          amount: selectedAccount.balance.toString(),
           account_type: selectedAccount.type,
-          is_active: selectedAccount.isActive,
         }
 
         const response = await axiosHandler({
@@ -297,12 +287,27 @@ const Accounts = () => {
   }
 
   // Handle deleting an account
-  const handleDeleteAccount = () => {
+  const handleDeleteAccount = async () => {
     if (accountToDelete) {
-      const updatedAccounts = accounts.filter((account) => account.id !== accountToDelete.id)
-      setAccounts(updatedAccounts)
-      setIsDeleteDialogOpen(false)
-      setAccountToDelete(null)
+      try {
+        const response = await axiosHandler({
+          method: "DELETE",
+          url: pocketUrl.delete.replace(":id", accountToDelete.id.toString()),
+          isAuthorized: true
+        })
+        
+        // Only update local state if API call succeeds
+        const updatedAccounts = accounts.filter((account) => account.id !== accountToDelete.id)
+        setAccounts(updatedAccounts)
+        setIsDeleteDialogOpen(false)
+        setAccountToDelete(null)
+        
+        toast("Account deleted successfully", { type: "success" })
+      } catch (error) {
+        console.error('Error deleting account:', error)
+        toast("Failed to delete account", { type: "error" })
+        // Don't update local state or close dialog on error
+      }
     }
   }
 
@@ -348,7 +353,7 @@ const Accounts = () => {
                     <h1 className="text-xl sm:text-2xl font-bold text-gray-800">Account Management</h1>
                   </div>
                   <Badge variant="outline" className="text-blue-600 border-blue-200">
-                    {activeAccounts} Active Accounts
+                    {totalAccounts} Total Accounts
                   </Badge>
                 </div>
                 <div className="flex items-center gap-2">
@@ -417,8 +422,8 @@ const Accounts = () => {
                         <CardContent className="p-4">
                           <div className="flex items-center justify-between">
                             <div>
-                              <p className="text-sm font-medium text-gray-600">Active Accounts</p>
-                              <p className="text-2xl font-bold text-gray-900">{activeAccounts}</p>
+                              <p className="text-sm font-medium text-gray-600">Total Accounts</p>
+                              <p className="text-2xl font-bold text-gray-900">{totalAccounts}</p>
                             </div>
                             <div className="p-2 rounded-full bg-blue-100">
                               <Building2 className="h-6 w-6 text-blue-600" />
@@ -428,21 +433,7 @@ const Accounts = () => {
                       </Card>
                     </motion.div>
 
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-                      <Card>
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-sm font-medium text-gray-600">Total Accounts</p>
-                              <p className="text-2xl font-bold text-gray-900">{accounts.length}</p>
-                            </div>
-                            <div className="p-2 rounded-full bg-purple-100">
-                              <CreditCard className="h-6 w-6 text-purple-600" />
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </motion.div>
+
                   </>
                 )}
               </div>
@@ -495,7 +486,7 @@ const Accounts = () => {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.4 + index * 0.1 }}
                     >
-                      <Card className={`relative overflow-hidden ${!account.isActive ? "opacity-60" : ""}`}>
+                      <Card className="relative overflow-hidden">
                         <div className={`absolute top-0 left-0 w-full h-2 ${account.color}`} />
                         <CardHeader className="pb-2">
                           <div className="flex items-center justify-between">
@@ -522,9 +513,6 @@ const Accounts = () => {
                           <div className="flex items-center gap-2">
                             <Badge variant="outline" className="text-xs">
                               {account.type}
-                            </Badge>
-                            <Badge variant={account.isActive ? "default" : "secondary"} className="text-xs">
-                              {account.isActive ? "Active" : "Inactive"}
                             </Badge>
                           </div>
                         </CardHeader>
@@ -617,36 +605,7 @@ const Accounts = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="balance" className="text-right text-sm font-medium">
-                Initial Balance (Rp)
-              </Label>
-              <Input
-                id="balance"
-                type="number"
-                placeholder="0"
-                className="col-span-3"
-                value={newAccount.balance || ""}
-                onChange={(e) => setNewAccount({ ...newAccount, balance: Number(e.target.value) })}
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="status" className="text-right text-sm font-medium">
-                Status
-              </Label>
-              <Select
-                value={newAccount.isActive ? "active" : "inactive"}
-                onValueChange={(value) => setNewAccount({ ...newAccount, isActive: value === "active" })}
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>
@@ -715,59 +674,7 @@ const Accounts = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-balance" className="text-right text-sm font-medium">
-                  Balance (Rp)
-                </Label>
-                <Input
-                  id="edit-balance"
-                  type="number"
-                  placeholder="0"
-                  className="col-span-3"
-                  value={selectedAccount.balance}
-                  onChange={(e) => setSelectedAccount({ ...selectedAccount, balance: Number(e.target.value) })}
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-color" className="text-right text-sm font-medium">
-                  Color Theme
-                </Label>
-                <Select
-                  value={selectedAccount.color}
-                  onValueChange={(value) => setSelectedAccount({ ...selectedAccount, color: value })}
-                >
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select color" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {colors.map((color) => (
-                      <SelectItem key={color.value} value={color.value}>
-                        <div className="flex items-center gap-2">
-                          <div className={`w-4 h-4 rounded-full ${color.value}`} />
-                          {color.name}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-status" className="text-right text-sm font-medium">
-                  Status
-                </Label>
-                <Select
-                  value={selectedAccount.isActive ? "active" : "inactive"}
-                  onValueChange={(value) => setSelectedAccount({ ...selectedAccount, isActive: value === "active" })}
-                >
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+
             </div>
           )}
           <DialogFooter>

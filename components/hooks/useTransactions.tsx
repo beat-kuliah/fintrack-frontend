@@ -11,6 +11,7 @@ export interface Transaction {
   amount: string;
   category: string;
   transaction_date: string;
+  transaction_type: string; // "income" or "expense"
   created_at: string;
   updated_at: string;
 }
@@ -28,6 +29,7 @@ export interface TransactionFilters {
   category?: string;
   from_date?: string;
   to_date?: string;
+  transaction_type?: string;
 }
 
 export interface CreateTransactionData {
@@ -36,6 +38,7 @@ export interface CreateTransactionData {
   amount: string;
   category: string;
   transaction_date: string;
+  transaction_type: string; // "income" or "expense"
 }
 
 const useTransactions = () => {
@@ -56,6 +59,7 @@ const useTransactions = () => {
       if (filters.category) queryParams.append('category', filters.category);
       if (filters.from_date) queryParams.append('from_date', filters.from_date);
       if (filters.to_date) queryParams.append('to_date', filters.to_date);
+      if (filters.transaction_type) queryParams.append('transaction_type', filters.transaction_type);
       
       const url = `${transactionUrl.list}${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
       

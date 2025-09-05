@@ -19,7 +19,7 @@ const Home = () => {
   return (
     <MainLayout>
       <h1 className="title">
-        Welcome, <span>{activeUser?.name || "user"}</span>
+        
       </h1>
     </MainLayout>
   );

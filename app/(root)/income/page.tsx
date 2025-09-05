@@ -18,11 +18,11 @@ import { Label } from "@/components/ui/label"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
 import useTransactions, { Transaction, TransactionFilters, CreateTransactionData } from "@/components/hooks/useTransactions"
-import useSpendingAnalytics from "@/components/hooks/useSpendingAnalytics"
+import useIncomeAnalytics from "@/components/hooks/useIncomeAnalytics"
 import usePockets, { Account } from "@/components/hooks/usePockets"
 
 // Updated interface to match API response
-interface SpendingEntry {
+interface IncomeEntry {
   id: number
   user_id: number
   account_id: number
@@ -30,6 +30,7 @@ interface SpendingEntry {
   amount: string
   category: string
   transaction_date: string
+  transaction_type: string
   created_at: string
   updated_at: string
 }
@@ -43,8 +44,8 @@ const formatApiDate = (dateString: string) => {
   return `${day} ${month} ${year}`
 }
 
-// Helper function to convert Transaction to SpendingEntry for display
-const transactionToSpendingEntry = (transaction: Transaction): SpendingEntry => {
+// Helper function to convert Transaction to IncomeEntry for display
+const transactionToIncomeEntry = (transaction: Transaction): IncomeEntry => {
   return {
     id: transaction.id,
     user_id: transaction.user_id,
@@ -53,6 +54,7 @@ const transactionToSpendingEntry = (transaction: Transaction): SpendingEntry => 
     amount: transaction.amount,
     category: transaction.category,
     transaction_date: transaction.transaction_date,
+    transaction_type: transaction.transaction_type,
     created_at: transaction.created_at,
     updated_at: transaction.updated_at,
   }
@@ -73,8 +75,9 @@ const getMonthDates = (month: string, year: number) => {
   }
   
   const monthIndex = monthMap[month]
-  const firstDay = new Date(year, monthIndex, 1)
-  const lastDay = new Date(year, monthIndex + 1, 0)
+  // Use UTC to avoid timezone issues
+  const firstDay = new Date(Date.UTC(year, monthIndex, 1))
+  const lastDay = new Date(Date.UTC(year, monthIndex + 1, 0))
   
   return {
     from_date: firstDay.toISOString().split('T')[0],
@@ -102,20 +105,19 @@ const getDetailedPeriod = (month: string, year: number) => {
 
 // Available categories
 const categories = [
-  "Food",
-  "Supplies",
-  "Entertainment",
-  "Transportation",
-  "Healthcare",
-  "Shopping",
-  "Gifts",
-  "Utilities",
-  "Home Rent",
+  "Salary",
+  "Interest",
+  "Bonus",
+  "Investment",
+  "Business",
+  "Freelance",
+  "Gift",
+  "Other",
 ]
 
 // Available accounts will be loaded from API
 
-const Spending = () => {
+const Income = () => {
   // API hooks
   const { 
     loading: transactionsLoading, 
@@ -129,12 +131,12 @@ const Spending = () => {
   const { 
     loading: analyticsLoading, 
     error: analyticsError, 
-    getSpendingSummary,
+    getIncomeSummary,
     getCategoryBreakdown,
     getMonthlyTrends,
     getDailyTrends,
     getRecentTransactions
-  } = useSpendingAnalytics()
+  } = useIncomeAnalytics()
   
   const {
     loading: pocketsLoading,
@@ -143,10 +145,10 @@ const Spending = () => {
   } = usePockets()
 
   // State management
-  const [spendingData, setSpendingData] = useState<SpendingEntry[]>([])
+  const [incomeData, setIncomeData] = useState<IncomeEntry[]>([])
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
-  const [selectedEntry, setSelectedEntry] = useState<SpendingEntry | null>(null)
+  const [selectedEntry, setSelectedEntry] = useState<IncomeEntry | null>(null)
   const [totalBalance, setTotalBalance] = useState<number>(0)
   const [categoryBreakdown, setCategoryBreakdown] = useState<any[]>([])
   const [monthlyTrends, setMonthlyTrends] = useState<any[]>([])
@@ -171,15 +173,16 @@ const Spending = () => {
   const [newEntry, setNewEntry] = useState<Partial<CreateTransactionData>>({
     account_id: 1,
     description: "",
-    category: "Food",
+    category: "Salary",
     amount: "",
     transaction_date: new Date().toISOString().split("T")[0],
+    transaction_type: "income",
   })
 
   // Load initial data
   useEffect(() => {
     loadTransactions()
-    loadSpendingSummary()
+    loadIncomeSummary()
     loadAccounts()
   }, [currentPage, selectedCategory, selectedMonth, selectedYear])
   
@@ -193,6 +196,7 @@ const Spending = () => {
     const filters: TransactionFilters = {
       page: currentPage,
       limit: itemsPerPage,
+      transaction_type: "income",
     }
     
     if (selectedCategory !== "all") {
@@ -206,21 +210,21 @@ const Spending = () => {
     
     const response = await getTransactions(filters)
     if (response?.data) {
-      const entries = response.data.map(transactionToSpendingEntry)
-      setSpendingData(entries)
+      const entries = response.data.map(transactionToIncomeEntry)
+    setIncomeData(entries)
       setTotalItems(response.total_items || 0)
       setTotalPages(Math.ceil((response.total_items || 0) / itemsPerPage))
     }
   }
 
-  // Load spending summary for selected month and year
-  const loadSpendingSummary = async () => {
+  // Load income summary for selected month and year
+  const loadIncomeSummary = async () => {
     const dateParams = getMonthDates(selectedMonth, selectedYear)
     
     // Load summary
-    const summary = await getSpendingSummary(dateParams)
+    const summary = await getIncomeSummary(dateParams)
     if (summary) {
-      setTotalBalance(parseFloat(summary.total_spending))
+      setTotalBalance(parseFloat(summary.total_income))
     }
     
     // Load category breakdown
@@ -276,13 +280,14 @@ const Spending = () => {
         setNewEntry({
           account_id: 1,
           description: "",
-          category: "Food",
+          category: "Salary",
           amount: "",
           transaction_date: new Date().toISOString().split("T")[0],
+          transaction_type: "income",
         })
         // Reload transactions
         loadTransactions()
-        loadSpendingSummary()
+        loadIncomeSummary()
       }
     }
   }
@@ -296,6 +301,7 @@ const Spending = () => {
         amount: selectedEntry.amount,
         category: selectedEntry.category,
         transaction_date: selectedEntry.transaction_date.split('T')[0],
+        transaction_type: "income",
       }
       
       const result = await updateTransaction(selectedEntry.id, updateData)
@@ -305,7 +311,7 @@ const Spending = () => {
         setSelectedEntry(null)
         // Reload transactions
         loadTransactions()
-        loadSpendingSummary()
+        loadIncomeSummary()
       }
     }
   }
@@ -315,11 +321,26 @@ const Spending = () => {
     if (!confirm('Are you sure you want to delete this transaction?')) return;
     
     try {
-      await deleteTransaction(id);
-      await loadTransactions();
-      await loadSpendingSummary();
+      const result = await deleteTransaction(id);
+      
+      if (result) {
+        // Immediately update local state to remove the deleted item
+        const updatedData = incomeData.filter(item => item.id !== id);
+        setIncomeData(updatedData);
+        
+        // If current page becomes empty and we're not on page 1, go to previous page
+        if (updatedData.length === 0 && currentPage > 1) {
+          setCurrentPage(currentPage - 1);
+        }
+        
+        // Then reload data to ensure consistency with server
+        await loadTransactions();
+        await loadIncomeSummary();
+      }
     } catch (error) {
       console.error('Error deleting transaction:', error);
+      // Reload data even on error to ensure UI is in sync with server
+      await loadTransactions();
     }
   };
 
@@ -333,7 +354,7 @@ const Spending = () => {
   }
 
   // Open edit modal for an entry
-  const openEditModal = (entry: SpendingEntry) => {
+  const openEditModal = (entry: IncomeEntry) => {
     setSelectedEntry({ ...entry })
     setIsEditModalOpen(true)
   }
@@ -344,7 +365,7 @@ const Spending = () => {
         <div className="flex items-center gap-2 w-full">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 h-4" />
-          <h1 className="text-sm sm:text-lg font-semibold truncate">Spending Tracker</h1>
+          <h1 className="text-sm sm:text-lg font-semibold truncate">Income Tracker</h1>
         </div>
       </header>
 
@@ -355,12 +376,12 @@ const Spending = () => {
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-rose-50 rounded-lg p-4 sm:p-6 shadow-sm"
+              className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-green-50 rounded-lg p-4 sm:p-6 shadow-sm"
             >
-              <h1 className="text-2xl font-bold text-rose-500">Spending Tracker</h1>
+              <h1 className="text-2xl font-bold text-green-500">Income Tracker</h1>
               <div className="flex gap-2">
                 <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                  <SelectTrigger className="w-32 bg-white text-rose-500 border-rose-200">
+                  <SelectTrigger className="w-32 bg-white text-green-500 border-green-200">
                     <SelectValue placeholder="Select Month" />
                   </SelectTrigger>
                   <SelectContent>
@@ -379,7 +400,7 @@ const Spending = () => {
                 </SelectContent>
               </Select>
               <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(Number(value))}>
-                <SelectTrigger className="w-20 bg-white text-rose-500 border-rose-200">
+                <SelectTrigger className="w-20 bg-white text-green-500 border-green-200">
                   <SelectValue placeholder="Year" />
                 </SelectTrigger>
                 <SelectContent>
@@ -399,7 +420,7 @@ const Spending = () => {
               className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white rounded-lg p-4 border-b border-gray-200"
             >
               <div className="flex items-center gap-2">
-                <span className="text-sm text-rose-400">Period:</span>
+                <span className="text-sm text-green-400">Period:</span>
                 <span className="text-sm font-medium">{getDetailedPeriod(selectedMonth, selectedYear)}</span>
               </div>
               <div className="flex items-center gap-2">
@@ -430,7 +451,7 @@ const Spending = () => {
               <div>
                 {(transactionsLoading || analyticsLoading) && (
                   <div className="flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin text-rose-500" />
+                    <Loader2 className="h-4 w-4 animate-spin text-green-500" />
                     <span className="text-sm text-gray-500">
                       {transactionsLoading && analyticsLoading ? 'Loading data...' : 
                        transactionsLoading ? 'Loading transactions...' : 'Loading analytics...'}
@@ -440,18 +461,18 @@ const Spending = () => {
               </div>
               <Button 
                 onClick={() => setIsAddModalOpen(true)} 
-                className="bg-rose-500 hover:bg-rose-600 text-white"
+                className="bg-green-500 hover:bg-green-600 text-white"
                 disabled={transactionsLoading}
               >
                 {transactionsLoading ? (
                   <><Loader2 className="h-4 w-4 animate-spin mr-2" />Loading...</>
                 ) : (
-                  <><Plus className="h-4 w-4 mr-2" /> Add New Spending</>
+                  <><Plus className="h-4 w-4 mr-2" /> Add New Income</>
                 )}
               </Button>
             </motion.div>
 
-            {/* Spending Table */}
+            {/* Income Table */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -502,12 +523,12 @@ const Spending = () => {
 
               {/* Table Body */}
               <div className="max-h-[calc(100vh-300px)] overflow-y-auto">
-                {spendingData.length === 0 && !transactionsLoading ? (
+                {incomeData.length === 0 && !transactionsLoading ? (
                   <div className="p-8 text-center text-gray-500">
                     No transactions found for the current filters.
                   </div>
                 ) : (
-                  spendingData.map((entry, index) => (
+                  incomeData.map((entry, index) => (
                     <motion.div
                       key={entry.id}
                       initial={{ opacity: 0, y: 10 }}
@@ -652,7 +673,7 @@ const Spending = () => {
                            </div>
                            <div className="w-full bg-gray-200 rounded-full h-2">
                              <div 
-                               className="bg-rose-500 h-2 rounded-full transition-all duration-300"
+                               className="bg-green-500 h-2 rounded-full transition-all duration-300"
                                style={{ width: `${percentage}%` }}
                              ></div>
                            </div>
@@ -676,8 +697,8 @@ const Spending = () => {
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Add New Spending</DialogTitle>
-            <DialogDescription>Enter the details of your new spending entry.</DialogDescription>
+            <DialogTitle>Add New Income</DialogTitle>
+            <DialogDescription>Enter the details of your new income entry.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
@@ -698,7 +719,7 @@ const Spending = () => {
               </Label>
               <Input
                 id="description"
-                placeholder="Enter spending description"
+                placeholder="Enter income description"
                 className="col-span-3"
                 value={newEntry.description || ""}
                 onChange={(e) => setNewEntry({ ...newEntry, description: e.target.value })}
@@ -762,8 +783,8 @@ const Spending = () => {
             <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleAddEntry} className="bg-rose-500 hover:bg-rose-600">
-              Add Spending
+            <Button onClick={handleAddEntry} className="bg-green-500 hover:bg-green-600">
+              Add Income
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -773,8 +794,8 @@ const Spending = () => {
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Edit Spending</DialogTitle>
-            <DialogDescription>Update the details of your spending entry.</DialogDescription>
+            <DialogTitle>Edit Income</DialogTitle>
+            <DialogDescription>Update the details of your income entry.</DialogDescription>
           </DialogHeader>
           {selectedEntry && (
             <div className="grid gap-4 py-4">
@@ -796,7 +817,7 @@ const Spending = () => {
                 </Label>
                 <Input
                   id="edit-description"
-                  placeholder="Enter spending description"
+                  placeholder="Enter income description"
                   className="col-span-3"
                   value={selectedEntry.description}
                   onChange={(e) => setSelectedEntry({ ...selectedEntry, description: e.target.value })}
@@ -861,7 +882,7 @@ const Spending = () => {
             <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleEditEntry} className="bg-rose-500 hover:bg-rose-600">
+            <Button onClick={handleEditEntry} className="bg-green-500 hover:bg-green-600">
               Save Changes
             </Button>
           </DialogFooter>
@@ -871,4 +892,4 @@ const Spending = () => {
   )
 };
 
-export default Spending;
+export default Income;

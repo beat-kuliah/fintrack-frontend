@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import useAxiosHandler from '@/utils/axiosHandler';
-import { spendingAnalyticsUrl } from '@/utils/network';
+import { incomeAnalyticsUrl } from '@/utils/network';
 import { Transaction } from './useTransactions';
 
-// Spending Analytics interfaces based on API response
-export interface SpendingSummary {
-  total_spending: string;
+// Income Analytics interfaces based on API response
+export interface IncomeSummary {
+  total_income: string;
   total_transactions: number;
   average_per_day: string;
   average_per_transaction: string;
@@ -50,13 +50,13 @@ export interface DateRangeParams {
   to_date: string;
 }
 
-const useSpendingAnalytics = () => {
+const useIncomeAnalytics = () => {
   const { axiosHandler } = useAxiosHandler();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Get spending summary
-  const getSpendingSummary = async (params: DateRangeParams) => {
+  // Get income summary
+  const getIncomeSummary = async (params: DateRangeParams) => {
     setLoading(true);
     setError(null);
     
@@ -66,22 +66,22 @@ const useSpendingAnalytics = () => {
         to_date: params.to_date,
       });
       
-      const url = `${spendingAnalyticsUrl.summary}?${queryParams.toString()}`;
+      const url = `${incomeAnalyticsUrl.summary}?${queryParams.toString()}`;
       
-      const response = await axiosHandler<SpendingSummary>({
+      const response = await axiosHandler<IncomeSummary>({
         method: 'GET',
         url,
         isAuthorized: true,
       });
       
       if (response.error) {
-        setError('Failed to fetch spending summary');
+        setError('Failed to fetch income summary');
         return null;
       }
       
       return response.data;
     } catch (err) {
-      setError('Failed to fetch spending summary');
+      setError('Failed to fetch income summary');
       return null;
     } finally {
       setLoading(false);
@@ -99,7 +99,7 @@ const useSpendingAnalytics = () => {
         to_date: params.to_date,
       });
       
-      const url = `${spendingAnalyticsUrl.categoryBreakdown}?${queryParams.toString()}`;
+      const url = `${incomeAnalyticsUrl.categoryBreakdown}?${queryParams.toString()}`;
       
       const response = await axiosHandler<CategoryBreakdownResponse>({
         method: 'GET',
@@ -132,7 +132,7 @@ const useSpendingAnalytics = () => {
         to_date: params.to_date,
       });
       
-      const url = `${spendingAnalyticsUrl.monthlyTrend}?${queryParams.toString()}`;
+      const url = `${incomeAnalyticsUrl.monthlyTrend}?${queryParams.toString()}`;
       
       const response = await axiosHandler<TrendResponse>({
         method: 'GET',
@@ -165,7 +165,7 @@ const useSpendingAnalytics = () => {
         to_date: params.to_date,
       });
       
-      const url = `${spendingAnalyticsUrl.dailyTrend}?${queryParams.toString()}`;
+      const url = `${incomeAnalyticsUrl.dailyTrend}?${queryParams.toString()}`;
       
       const response = await axiosHandler<TrendResponse>({
         method: 'GET',
@@ -203,7 +203,7 @@ const useSpendingAnalytics = () => {
         queryParams.append('to_date', params.to_date);
       }
       
-      const url = `${spendingAnalyticsUrl.recent}?${queryParams.toString()}`;
+      const url = `${incomeAnalyticsUrl.recent}?${queryParams.toString()}`;
       
       const response = await axiosHandler<RecentTransactionsResponse>({
         method: 'GET',
@@ -228,7 +228,7 @@ const useSpendingAnalytics = () => {
   return {
     loading,
     error,
-    getSpendingSummary,
+    getIncomeSummary,
     getCategoryBreakdown,
     getMonthlyTrends,
     getDailyTrends,
@@ -236,4 +236,4 @@ const useSpendingAnalytics = () => {
   };
 };
 
-export default useSpendingAnalytics;
+export default useIncomeAnalytics;

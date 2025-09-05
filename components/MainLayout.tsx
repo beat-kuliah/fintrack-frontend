@@ -39,7 +39,7 @@ const summaryCards = [
     textColor: "text-teal-600",
   },
   {
-    title: "January Spending",
+    title: "January Expense",
     amount: 3954990,
     color: "bg-teal-500",
     textColor: "text-teal-600",
@@ -213,7 +213,6 @@ const MainLayout: FC<{ children: React.ReactNode }> = ({ children }) => {
                     <Select defaultValue="january">
                       <SelectTrigger className="w-36 h-9 bg-white border-blue-300 text-blue-800">
                         <SelectValue />
-                        <ChevronDown className="h-4 w-4" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="january">January</SelectItem>
@@ -299,7 +298,7 @@ const MainLayout: FC<{ children: React.ReactNode }> = ({ children }) => {
               <Card className="border border-cyan-200 overflow-hidden">
                 <div className="bg-gradient-to-r from-cyan-50 to-blue-100 p-6 border-b border-cyan-200">
                   <h3 className="text-xl font-bold bg-gradient-to-r from-cyan-800 to-blue-700 bg-clip-text text-transparent mb-2">Expense Breakdown</h3>
-                  <p className="text-cyan-700 text-sm">Track your spending across different categories</p>
+                  <p className="text-cyan-700 text-sm">Track your expenses across different categories</p>
                 </div>
                 <CardContent className="p-0 bg-gradient-to-br from-white to-cyan-50/30">
                   {/* Mobile Card View */}
@@ -530,7 +529,7 @@ const MainLayout: FC<{ children: React.ReactNode }> = ({ children }) => {
                       </div>
                       <div>
                         <CardTitle className="text-lg font-bold bg-gradient-to-r from-cyan-800 to-blue-700 bg-clip-text text-transparent">
-                          Spending Trends
+                          Expense Trends
                         </CardTitle>
                         <p className="text-cyan-700 text-sm mt-1">
                           Monthly expense patterns

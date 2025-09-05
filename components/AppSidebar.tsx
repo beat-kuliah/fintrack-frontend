@@ -48,9 +48,14 @@ const navigationItems = [
     icon: PieChart,
   },
   {
-    title: "Spending",
-    url: "/spending",
+      title: "Expense",
+      url: "/expense",
     icon: Receipt,
+  },
+  {
+    title: "Income",
+    url: "/income",
+    icon: DollarSign,
   },
   {
     title: "Accounts",
