@@ -2,18 +2,10 @@
 
 import type * as React from "react";
 import {
-  BarChart3,
   Building2,
-  CreditCard,
   DollarSign,
   Home,
   PieChart,
-  Settings,
-  TrendingUp,
-  Wallet,
-  Target,
-  FileText,
-  Bell,
   Receipt,
   LogOut,
 } from "lucide-react";
@@ -62,63 +54,63 @@ const navigationItems = [
     url: "/accounts",
     icon: Building2,
   },
-  {
-    title: "Portfolio",
-    url: "#",
-    icon: TrendingUp,
-  },
-  {
-    title: "Assets",
-    url: "#",
-    icon: Building2,
-  },
-  {
-    title: "Transactions",
-    url: "#",
-    icon: CreditCard,
-  },
-  {
-    title: "Budget",
-    url: "#",
-    icon: Wallet,
-  },
-  {
-    title: "Goals",
-    url: "#",
-    icon: Target,
-  },
+  // {
+  //   title: "Portfolio",
+  //   url: "#",
+  //   icon: TrendingUp,
+  // },
+  // {
+  //   title: "Assets",
+  //   url: "#",
+  //   icon: Building2,
+  // },
+  // {
+  //   title: "Transactions",
+  //   url: "#",
+  //   icon: CreditCard,
+  // },
+  // {
+  //   title: "Budget",
+  //   url: "#",
+  //   icon: Wallet,
+  // },
+  // {
+  //   title: "Goals",
+  //   url: "#",
+  //   icon: Target,
+  // },
 ];
 
-const analyticsItems = [
-  {
-    title: "Reports",
-    url: "#",
-    icon: FileText,
-  },
-  {
-    title: "Analytics",
-    url: "#",
-    icon: BarChart3,
-  },
-  {
-    title: "Charts",
-    url: "#",
-    icon: PieChart,
-  },
-];
+// const analyticsItems = [
+//   {
+//     title: "Reports",
+//     url: "#",
+//     icon: FileText,
+//   },
+//   {
+//     title: "Analytics",
+//     url: "#",
+//     icon: BarChart3,
+//   },
+//   {
+//     title: "Charts",
+//     url: "#",
+//     icon: PieChart,
+//   },
+// ];
 
-const settingsItems = [
-  {
-    title: "Notifications",
-    url: "#",
-    icon: Bell,
-  },
-  {
-    title: "Settings",
-    url: "#",
-    icon: Settings,
-  },
-];
+// const settingsItems = [
+//   {
+//     title: "Notifications",
+//     url: "#",
+//     icon: Bell,
+//   },
+//   {
+//     title: "Settings",
+//     url: "#",
+//     icon: Settings,
+//   },
+// ];
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
@@ -159,7 +151,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        <SidebarGroup>
+        {/* <SidebarGroup>
           <SidebarGroupLabel>Analytics</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -175,12 +167,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               ))}
             </SidebarMenu>
           </SidebarGroupContent>
-        </SidebarGroup>
+        </SidebarGroup> */}
         <SidebarGroup>
           <SidebarGroupLabel>System</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {settingsItems.map((item) => (
+              {/* {settingsItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <a href={item.url}>
@@ -189,7 +181,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-              ))}
+              ))} */}
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <button

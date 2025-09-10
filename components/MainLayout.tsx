@@ -1,6 +1,5 @@
 import { FC } from "react";
 import { motion } from "framer-motion";
-import { ChevronDown } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -354,7 +353,7 @@ const MainLayout: FC<{ children: React.ReactNode }> = ({ children }) => {
                               <span>{item.percentage.toFixed(1)}%</span>
                             </div>
                             <Progress
-                              value={item.percentage > 100 ? 100 : item.percentage}
+                              value={item.percentage}
                               className={`h-3 ${
                                 isOverBudget ? 'bg-red-100' :
                                 isNearBudget ? 'bg-yellow-100' : 'bg-green-100'
@@ -425,7 +424,7 @@ const MainLayout: FC<{ children: React.ReactNode }> = ({ children }) => {
                                 <div className="w-full max-w-xs">
                                   <div className="flex items-center gap-2">
                                     <Progress
-                                      value={item.percentage > 100 ? 100 : item.percentage}
+                                      value={item.percentage}
                                       className={`h-3 flex-1 ${
                                         isOverBudget ? 'bg-red-100' :
                                         isNearBudget ? 'bg-yellow-100' : 'bg-green-100'
