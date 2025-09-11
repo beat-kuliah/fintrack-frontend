@@ -80,7 +80,7 @@ const useIncomeAnalytics = () => {
       }
       
       return response.data;
-    } catch (err) {
+    } catch {
       setError('Failed to fetch income summary');
       return null;
     } finally {
@@ -113,7 +113,7 @@ const useIncomeAnalytics = () => {
       }
       
       return response.data;
-    } catch (err) {
+    } catch {
       setError('Failed to fetch category breakdown');
       return null;
     } finally {
@@ -146,7 +146,7 @@ const useIncomeAnalytics = () => {
       }
       
       return response.data;
-    } catch (err) {
+    } catch {
       setError('Failed to fetch monthly trends');
       return null;
     } finally {
@@ -179,7 +179,7 @@ const useIncomeAnalytics = () => {
       }
       
       return response.data;
-    } catch (err) {
+    } catch {
       setError('Failed to fetch daily trends');
       return null;
     } finally {
@@ -217,7 +217,7 @@ const useIncomeAnalytics = () => {
       }
       
       return response.data;
-    } catch (err) {
+    } catch {
       setError('Failed to fetch recent transactions');
       return null;
     } finally {

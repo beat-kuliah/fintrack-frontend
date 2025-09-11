@@ -18,7 +18,7 @@ import { Label } from "@/components/ui/label"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
 import useTransactions, { Transaction, TransactionFilters, CreateTransactionData } from "@/components/hooks/useTransactions"
-import useExpenseAnalytics from "@/components/hooks/useExpenseAnalytics"
+import useExpenseAnalytics, { CategorySummary, TrendData } from "@/components/hooks/useExpenseAnalytics"
 import usePockets, { Account } from "@/components/hooks/usePockets"
 
 // Updated interface to match API response
@@ -133,14 +133,10 @@ const Expense = () => {
     error: analyticsError, 
     getExpenseSummary,
     getCategoryBreakdown,
-    getMonthlyTrends,
-    getDailyTrends,
-    getRecentTransactions
+    getMonthlyTrends
   } = useExpenseAnalytics()
   
   const {
-    loading: pocketsLoading,
-    error: pocketsError,
     getActiveAccounts
   } = usePockets()
 
@@ -150,16 +146,16 @@ const Expense = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [selectedEntry, setSelectedEntry] = useState<ExpenseEntry | null>(null)
   const [totalBalance, setTotalBalance] = useState<number>(0)
-  const [categoryBreakdown, setCategoryBreakdown] = useState<any[]>([])
-  const [monthlyTrends, setMonthlyTrends] = useState<any[]>([])
-  const [dailyTrends, setDailyTrends] = useState<any[]>([])
-  const [recentTransactions, setRecentTransactions] = useState<any[]>([])
+  const [categoryBreakdown, setCategoryBreakdown] = useState<CategorySummary[]>([])
+  const [monthlyTrends, setMonthlyTrends] = useState<TrendData[]>([])
+
+
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [totalItems, setTotalItems] = useState(0)
   const itemsPerPage = 10
   const [selectedCategory, setSelectedCategory] = useState<string>("all")
-  const [selectedAccount, setSelectedAccount] = useState<string>("all")
+
   const [accounts, setAccounts] = useState<Account[]>([])
   const [selectedMonth, setSelectedMonth] = useState<string>(() => {
     const now = new Date()
@@ -184,11 +180,13 @@ const Expense = () => {
     loadTransactions()
     loadExpenseSummary()
     loadAccounts()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, selectedCategory, selectedMonth, selectedYear])
   
   // Load accounts on component mount
   useEffect(() => {
     loadAccounts()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Load transactions with current filters
@@ -245,17 +243,7 @@ const Expense = () => {
       setMonthlyTrends(trendsData.trends || [])
     }
     
-    // Load daily trends for selected month
-    const dailyTrendsData = await getDailyTrends(dateParams)
-    if (dailyTrendsData) {
-      setDailyTrends(dailyTrendsData.trends || [])
-    }
-    
-    // Load recent transactions for selected month (limit 10)
-    const recentData = await getRecentTransactions(10, dateParams)
-    if (recentData) {
-      setRecentTransactions(recentData.data || [])
-    }
+
   }
   
   // Load active accounts
@@ -344,14 +332,7 @@ const Expense = () => {
     }
   };
 
-  // Format date string
-  const formatDateString = (dateString: string) => {
-    const date = new Date(dateString)
-    const day = String(date.getDate()).padStart(2, "0")
-    const month = date.toLocaleString("default", { month: "short" })
-    const year = date.getFullYear()
-    return `${day} ${month} ${year}`
-  }
+
 
   // Open edit modal for an entry
   const openEditModal = (entry: ExpenseEntry) => {

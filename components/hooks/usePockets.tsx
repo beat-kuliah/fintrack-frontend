@@ -44,7 +44,7 @@ const usePockets = () => {
       }
       
       return response.data;
-    } catch (err) {
+    } catch {
       setError('Failed to fetch active accounts');
       return null;
     } finally {

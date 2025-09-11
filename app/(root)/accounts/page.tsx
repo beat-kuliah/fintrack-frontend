@@ -62,21 +62,7 @@ interface Account {
   color: string
 }
 
-// Available banks
-const banks = [
-  "Bank BCA",
-  "Bank Jago",
-  "Bank BNI",
-  "Bank Mandiri",
-  "Bank CIMB",
-  "Bank BRI",
-  "Bank Danamon",
-  "Bank Permata",
-  "DANA",
-  "GoPay",
-  "OVO",
-  "ShopeePay",
-]
+
 
 // Account types
 const accountTypes = ["Checking", "Savings", "Savings Account", "Investment", "Business", "Credit Card"]
@@ -231,7 +217,7 @@ const Accounts = () => {
           // API call succeeded but didn't return proper data
           toast("Failed to add account", { type: "error" })
         }
-      } catch (error) {
+      } catch {
         toast("Failed to add account", { type: "error" })
         // Don't update accounts state or close modal on error
       }
@@ -290,7 +276,7 @@ const Accounts = () => {
   const handleDeleteAccount = async () => {
     if (accountToDelete) {
       try {
-        const response = await axiosHandler({
+        await axiosHandler({
           method: "DELETE",
           url: pocketUrl.delete.replace(":id", accountToDelete.id.toString()),
           isAuthorized: true

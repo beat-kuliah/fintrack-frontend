@@ -75,7 +75,7 @@ const useTransactions = () => {
       }
       
       return response.data;
-    } catch (err) {
+    } catch {
       setError('Failed to fetch transactions');
       return null;
     } finally {
@@ -102,7 +102,7 @@ const useTransactions = () => {
       }
       
       return response.data;
-    } catch (err) {
+    } catch {
       setError('Failed to create transaction');
       return null;
     } finally {
@@ -130,7 +130,7 @@ const useTransactions = () => {
       }
       
       return response.data;
-    } catch (err) {
+    } catch {
       setError('Failed to fetch transaction');
       return null;
     } finally {
@@ -159,7 +159,7 @@ const useTransactions = () => {
       }
       
       return response.data;
-    } catch (err) {
+    } catch {
       setError('Failed to update transaction');
       return null;
     } finally {
@@ -187,7 +187,7 @@ const useTransactions = () => {
       }
       
       return true;
-    } catch (err) {
+    } catch {
       setError('Failed to delete transaction');
       return false;
     } finally {
