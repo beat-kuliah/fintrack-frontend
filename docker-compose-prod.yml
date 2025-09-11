@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  fintrack-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    platform: linux/amd64
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    networks:
+      - fintrack-network
+
+networks:
+  fintrack-network:
+    driver: bridge
