@@ -34,7 +34,7 @@ const usePockets = () => {
     try {
       const response = await axiosHandler<ActiveAccountsResponse>({
         method: 'GET',
-        url: pocketUrl.active,
+        url: pocketUrl.list,
         isAuthorized: true,
       });
       

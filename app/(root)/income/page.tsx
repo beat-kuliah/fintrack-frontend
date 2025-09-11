@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Plus, ChevronDown, Filter, Edit2, Loader2 } from "lucide-react"
+import { Plus, ChevronDown, Filter, Edit2, Loader2, Edit, Trash2, Calendar, DollarSign, TrendingUp, ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -148,6 +148,11 @@ const Income = () => {
   const [totalBalance, setTotalBalance] = useState<number>(0)
   const [categoryBreakdown, setCategoryBreakdown] = useState<CategorySummary[]>([])
   const [monthlyTrends, setMonthlyTrends] = useState<TrendData[]>([])
+  
+  // Loading states to prevent double clicks
+  const [isAddingIncome, setIsAddingIncome] = useState(false)
+  const [isEditingIncome, setIsEditingIncome] = useState(false)
+  const [isDeletingIncome, setIsDeletingIncome] = useState(false)
 
 
   const [currentPage, setCurrentPage] = useState(1)
@@ -260,54 +265,68 @@ const Income = () => {
 
   // Handle adding a new entry
   const handleAddEntry = async () => {
+    if (isAddingIncome) return
     if (newEntry.description && newEntry.amount && newEntry.account_id) {
-      const result = await createTransaction(newEntry as CreateTransactionData)
-      
-      if (result) {
-        setIsAddModalOpen(false)
-        setNewEntry({
-          account_id: 1,
-          description: "",
-          category: "Salary",
-          amount: "",
-          transaction_date: new Date().toISOString().split("T")[0],
-          transaction_type: "income",
-        })
-        // Reload transactions
-        loadTransactions()
-        loadIncomeSummary()
+      setIsAddingIncome(true)
+      try {
+        const result = await createTransaction(newEntry as CreateTransactionData)
+        
+        if (result) {
+          setIsAddModalOpen(false)
+          setNewEntry({
+            account_id: 1,
+            description: "",
+            category: "Salary",
+            amount: "",
+            transaction_date: new Date().toISOString().split("T")[0],
+            transaction_type: "income",
+          })
+          // Reload transactions
+          loadTransactions()
+          loadIncomeSummary()
+        }
+      } finally {
+        setIsAddingIncome(false)
       }
     }
   }
 
   // Handle editing an entry
   const handleEditEntry = async () => {
+    if (isEditingIncome) return
     if (selectedEntry && selectedEntry.description && selectedEntry.amount) {
-      const updateData: CreateTransactionData = {
-        account_id: selectedEntry.account_id,
-        description: selectedEntry.description,
-        amount: selectedEntry.amount,
-        category: selectedEntry.category,
-        transaction_date: selectedEntry.transaction_date.split('T')[0],
-        transaction_type: "income",
-      }
-      
-      const result = await updateTransaction(selectedEntry.id, updateData)
-      
-      if (result) {
-        setIsEditModalOpen(false)
-        setSelectedEntry(null)
-        // Reload transactions
-        loadTransactions()
-        loadIncomeSummary()
+      setIsEditingIncome(true)
+      try {
+        const updateData: CreateTransactionData = {
+          account_id: selectedEntry.account_id,
+          description: selectedEntry.description,
+          amount: selectedEntry.amount,
+          category: selectedEntry.category,
+          transaction_date: selectedEntry.transaction_date.split('T')[0],
+          transaction_type: "income",
+        }
+        
+        const result = await updateTransaction(selectedEntry.id, updateData)
+        
+        if (result) {
+          setIsEditModalOpen(false)
+          setSelectedEntry(null)
+          // Reload transactions
+          loadTransactions()
+          loadIncomeSummary()
+        }
+      } finally {
+        setIsEditingIncome(false)
       }
     }
   }
 
   // Handle deleting an entry
   const handleDeleteEntry = async (id: number) => {
+    if (isDeletingIncome) return
     if (!confirm('Are you sure you want to delete this transaction?')) return;
     
+    setIsDeletingIncome(true)
     try {
       const result = await deleteTransaction(id);
       
@@ -329,6 +348,8 @@ const Income = () => {
       console.error('Error deleting transaction:', error);
       // Reload data even on error to ensure UI is in sync with server
       await loadTransactions();
+    } finally {
+      setIsDeletingIncome(false)
     }
   };
 
@@ -443,10 +464,10 @@ const Income = () => {
               <Button 
                 onClick={() => setIsAddModalOpen(true)} 
                 className="bg-green-500 hover:bg-green-600 text-white"
-                disabled={transactionsLoading}
+                disabled={transactionsLoading || isAddingIncome}
               >
-                {transactionsLoading ? (
-                  <><Loader2 className="h-4 w-4 animate-spin mr-2" />Loading...</>
+                {(transactionsLoading || isAddingIncome) ? (
+                  <><Loader2 className="h-4 w-4 animate-spin mr-2" />{transactionsLoading ? "Loading..." : "Adding..."}</>
                 ) : (
                   <><Plus className="h-4 w-4 mr-2" /> Add New Income</>
                 )}
@@ -530,8 +551,18 @@ const Income = () => {
                         <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => openEditModal(entry)}>
                           <Edit2 className="h-3 w-3 text-gray-500" />
                         </Button>
-                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-red-500 hover:text-red-700" onClick={() => handleDeleteEntry(entry.id)}>
-                          ×
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-6 w-6 p-0 text-red-500 hover:text-red-700" 
+                          onClick={() => handleDeleteEntry(entry.id)}
+                          disabled={isDeletingIncome}
+                        >
+                          {isDeletingIncome ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-3 w-3" />
+                          )}
                         </Button>
                       </div>
                     </motion.div>
@@ -764,8 +795,19 @@ const Income = () => {
             <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleAddEntry} className="bg-green-500 hover:bg-green-600">
-              Add Income
+            <Button 
+              onClick={handleAddEntry} 
+              className="bg-green-500 hover:bg-green-600"
+              disabled={isAddingIncome}
+            >
+              {isAddingIncome ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Adding...
+                </>
+              ) : (
+                "Add Income"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -863,8 +905,19 @@ const Income = () => {
             <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleEditEntry} className="bg-green-500 hover:bg-green-600">
-              Save Changes
+            <Button 
+              onClick={handleEditEntry} 
+              className="bg-green-500 hover:bg-green-600"
+              disabled={isEditingIncome}
+            >
+              {isEditingIncome ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Saving...
+                </>
+              ) : (
+                "Save Changes"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

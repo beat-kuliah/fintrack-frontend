@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
-import { Plus, Edit2, CreditCard, Building2, Eye, EyeOff, Trash2 } from "lucide-react"
+import { Plus, Edit2, CreditCard, Building2, Eye, EyeOff, Trash2, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -55,7 +55,6 @@ interface ApiAccount {
 interface Account {
   id: number
   name: string
-  bank: string
   accountNumber: string
   balance: number
   type: string
@@ -89,9 +88,13 @@ const Accounts = () => {
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null)
   const [accountToDelete, setAccountToDelete] = useState<Account | null>(null)
   const [showBalances, setShowBalances] = useState(true)
+  // Loading states to prevent double clicks
+  const [isAddingAccount, setIsAddingAccount] = useState(false)
+  const [isEditingAccount, setIsEditingAccount] = useState(false)
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false)
+  const [isUpdatingBalance, setIsUpdatingBalance] = useState(false)
   const [newAccount, setNewAccount] = useState<Partial<Account>>({
     name: "",
-    bank: "",
     accountNumber: "",
     type: "Checking",
     color: "bg-blue-500",
@@ -104,20 +107,30 @@ const Accounts = () => {
     }
   }, [])
 
-  const handleUpdateShowBalance = (value: boolean) => {
+  const handleUpdateShowBalance = async (value: boolean) => {
+    if (isUpdatingBalance) return
+    
+    setIsUpdatingBalance(true)
     setShowBalances(value);
     localStorage.setItem(userShowBalanceKey, value.toString());
 
-    axiosHandler({
-      method: "PATCH",
-      url: userUrl.updateHideBalance,
-      isAuthorized: true,
-      data: {
-        hide_balance: !value,
-      }
-    })
-
-
+    try {
+      await axiosHandler({
+        method: "PATCH",
+        url: userUrl.updateHideBalance,
+        isAuthorized: true,
+        data: {
+          hide_balance: !value,
+        }
+      })
+    } catch (error) {
+      console.error('Error updating show balance:', error)
+      // Revert on error
+      setShowBalances(!value)
+      localStorage.setItem(userShowBalanceKey, (!value).toString())
+    } finally {
+      setIsUpdatingBalance(false)
+    }
   }
 
 
@@ -130,7 +143,6 @@ const Accounts = () => {
     return {
       id: apiAccount.id,
       name: apiAccount.name,
-      bank: "DANA", // Default bank name since it's not in API response
       accountNumber: apiAccount.account.Valid ? apiAccount.account.String : "N/A",
       balance: parseFloat(apiAccount.amount),
       type: apiAccount.account_type,
@@ -175,6 +187,9 @@ const Accounts = () => {
 
   // Handle adding a new account
   const handleAddAccount = async () => {
+    // Prevent double click
+    if (isAddingAccount) return
+    
     // Validate required fields
     if (!newAccount.name || !newAccount.accountNumber || !newAccount.type) {
       toast("Please fill in all required fields (Name, Account Number, and Account Type)", { type: "error" })
@@ -183,6 +198,7 @@ const Accounts = () => {
     
     if (newAccount.name && newAccount.accountNumber) {
       try {
+        setIsAddingAccount(true)
         const requestBody = {
           name: newAccount.name,
           account: newAccount.accountNumber,
@@ -206,7 +222,6 @@ const Accounts = () => {
           setIsAddModalOpen(false)
           setNewAccount({
             name: "",
-            bank: "",
             accountNumber: "",
             type: "Checking",
             color: "bg-blue-500",
@@ -220,12 +235,17 @@ const Accounts = () => {
       } catch {
         toast("Failed to add account", { type: "error" })
         // Don't update accounts state or close modal on error
+      } finally {
+        setIsAddingAccount(false)
       }
     }
   }
 
   // Handle editing an account
   const handleEditAccount = async () => {
+    // Prevent double click
+    if (isEditingAccount) return
+    
     // Validate required fields
     if (!selectedAccount || !selectedAccount.name || !selectedAccount.accountNumber || !selectedAccount.type) {
       toast("Please fill in all required fields (Name, Account Number, and Account Type)", { type: "error" })
@@ -234,6 +254,7 @@ const Accounts = () => {
     
     if (selectedAccount && selectedAccount.name && selectedAccount.accountNumber) {
       try {
+        setIsEditingAccount(true)
         const requestBody = {
           name: selectedAccount.name,
           account: selectedAccount.accountNumber,
@@ -268,14 +289,20 @@ const Accounts = () => {
         console.error('Error updating account:', error)
         toast("Failed to update account: Network error or server issue", { type: "error" })
         // Don't update accounts state or close modal on error
+      } finally {
+        setIsEditingAccount(false)
       }
     }
   }
 
   // Handle deleting an account
   const handleDeleteAccount = async () => {
+    // Prevent double click
+    if (isDeletingAccount) return
+    
     if (accountToDelete) {
       try {
+        setIsDeletingAccount(true)
         await axiosHandler({
           method: "DELETE",
           url: pocketUrl.delete.replace(":id", accountToDelete.id.toString()),
@@ -293,6 +320,8 @@ const Accounts = () => {
         console.error('Error deleting account:', error)
         toast("Failed to delete account", { type: "error" })
         // Don't update local state or close dialog on error
+      } finally {
+        setIsDeletingAccount(false)
       }
     }
   }
@@ -347,12 +376,21 @@ const Accounts = () => {
                     variant="outline"
                     size="sm"
                     onClick={() => handleUpdateShowBalance(!showBalances)}
+                    disabled={isUpdatingBalance}
                     className="flex items-center gap-2"
                   >
-                    {showBalances ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    {showBalances ? "Hide" : "Show"} Balances
+                    {isUpdatingBalance ? (
+                       <><Loader2 className="h-4 w-4 animate-spin" />Updating...</>
+                     ) : (
+                       <>{showBalances ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                       {showBalances ? "Hide" : "Show"} Balances</>
+                     )}
                   </Button>
-                  <Button onClick={() => setIsAddModalOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white">
+                  <Button 
+                    onClick={() => setIsAddModalOpen(true)} 
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    disabled={isAddingAccount || isEditingAccount || isDeletingAccount}
+                  >
                     <Plus className="h-4 w-4 mr-2" /> Add Account
                   </Button>
                 </div>
@@ -483,6 +521,7 @@ const Accounts = () => {
                                 size="sm"
                                 className="h-8 w-8 p-0"
                                 onClick={() => openEditModal(account)}
+                                disabled={isAddingAccount || isEditingAccount || isDeletingAccount}
                               >
                                 <Edit2 className="h-4 w-4 text-gray-500" />
                               </Button>
@@ -491,6 +530,7 @@ const Accounts = () => {
                                 size="sm"
                                 className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
                                 onClick={() => openDeleteDialog(account)}
+                                disabled={isAddingAccount || isEditingAccount || isDeletingAccount}
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -504,7 +544,6 @@ const Accounts = () => {
                         </CardHeader>
                         <CardContent className="space-y-3">
                           <div>
-                            <p className="text-sm text-gray-600">{account.bank}</p>
                             <p className="text-sm font-mono text-gray-500">
                               {showBalances ? account.accountNumber : maskAccountNumber(account.accountNumber)}
                             </p>
@@ -529,7 +568,11 @@ const Accounts = () => {
                     <Building2 className="h-12 w-12 text-gray-400 mb-4" />
                     <h3 className="text-lg font-semibold text-gray-600 mb-2">No accounts found</h3>
                     <p className="text-gray-500 mb-4">Get started by adding your first account</p>
-                    <Button onClick={() => setIsAddModalOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white">
+                    <Button 
+                      onClick={() => setIsAddModalOpen(true)} 
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                      disabled={isAddingAccount || isEditingAccount || isDeletingAccount}
+                    >
                       <Plus className="h-4 w-4 mr-2" /> Add Account
                     </Button>
                   </motion.div>
@@ -597,8 +640,12 @@ const Accounts = () => {
             <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleAddAccount} className="bg-blue-600 hover:bg-blue-700">
-              Add Account
+            <Button 
+              onClick={handleAddAccount} 
+              className="bg-blue-600 hover:bg-blue-700"
+              disabled={isAddingAccount}
+            >
+              {isAddingAccount ? "Adding..." : "Add Account"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -667,8 +714,12 @@ const Accounts = () => {
             <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleEditAccount} className="bg-blue-600 hover:bg-blue-700">
-              Save Changes
+            <Button 
+              onClick={handleEditAccount} 
+              className="bg-blue-600 hover:bg-blue-700"
+              disabled={isEditingAccount}
+            >
+              {isEditingAccount ? "Saving..." : "Save Changes"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -686,8 +737,8 @@ const Accounts = () => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteAccount} className="bg-red-600 hover:bg-red-700">
-              Delete Account
+            <AlertDialogAction onClick={handleDeleteAccount} className="bg-red-600 hover:bg-red-700" disabled={isDeletingAccount}>
+              {isDeletingAccount ? "Deleting..." : "Delete Account"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

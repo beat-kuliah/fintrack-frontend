@@ -1,25 +1,70 @@
-import { AxiosError } from "axios";
-import { toast } from "react-toastify";
+import { toast } from 'react-toastify';
+import { AxiosError } from 'axios';
 
-export const errorHandler = (e: AxiosError) => {
-  // toast(JSON.stringify(e.response?.data) || e.message, {
-  //   type: "error",
-  // });
+// Map untuk tracking toast yang sudah ditampilkan
+const displayedToasts = new Map<string, number>();
 
-  let errorMessage =
-    (e.response?.data as { error?: string })?.error ?? e.message;
+// Fungsi untuk membersihkan toast yang sudah expired
+const cleanupExpiredToasts = () => {
+  const now = Date.now();
+  for (const [key, timestamp] of displayedToasts.entries()) {
+    if (now - timestamp > 3000) { // 3 detik
+      displayedToasts.delete(key);
+    }
+  }
+};
 
-  if (Array.isArray(errorMessage)) {
-    errorMessage = errorMessage.join(", ");
-  } else if (typeof errorMessage === "object" && errorMessage !== null) {
-    errorMessage = Object.entries(errorMessage)
-      .map(([key, value]) => `${key}: ${value}`)
-      .join(", ");
-  } else if (typeof errorMessage !== "string") {
-    errorMessage = JSON.stringify(errorMessage);
+export const errorHandler = (error: any) => {
+  // Cleanup expired toasts
+  cleanupExpiredToasts();
+
+  if (error.response) {
+    // Server responded with error status
+    const status = error.response.status;
+    
+    // Handle 401 errors khusus
+    if (status === 401) {
+      const toastKey = 'token_expired_401';
+      const now = Date.now();
+      
+      // Cek apakah toast sudah ditampilkan dalam 3 detik terakhir
+      if (!displayedToasts.has(toastKey) || (now - displayedToasts.get(toastKey)!) > 3000) {
+        toast.error('Token Expired');
+        displayedToasts.set(toastKey, now);
+      }
+      return;
+    }
+    
+    // Handle error lainnya
+    const message = error.response.data?.message || error.response.data?.error || 'An error occurred';
+    const toastKey = `error_${status}_${message}`;
+    const now = Date.now();
+    
+    // Cek apakah toast yang sama sudah ditampilkan dalam 3 detik terakhir
+    if (!displayedToasts.has(toastKey) || (now - displayedToasts.get(toastKey)!) > 3000) {
+      toast.error(message);
+      displayedToasts.set(toastKey, now);
+    }
+  } else if (error.request) {
+    // Request was made but no response received
+    const toastKey = 'network_error';
+    const now = Date.now();
+    
+    if (!displayedToasts.has(toastKey) || (now - displayedToasts.get(toastKey)!) > 3000) {
+      toast.error('Network error. Please check your connection.');
+      displayedToasts.set(toastKey, now);
+    }
   } else {
-    errorMessage = "Internal Server Error";
+    // Something else happened
+    const message = error.message || 'An unexpected error occurred';
+    const toastKey = `general_error_${message}`;
+    const now = Date.now();
+    
+    if (!displayedToasts.has(toastKey) || (now - displayedToasts.get(toastKey)!) > 3000) {
+      toast.error(message);
+      displayedToasts.set(toastKey, now);
+    }
   }
 
-  toast(errorMessage, { type: "error" });
+  console.error('Error details:', error);
 };

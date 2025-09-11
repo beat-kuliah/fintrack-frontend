@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Plus, ChevronDown, Filter, Edit2, Loader2 } from "lucide-react"
+import { Plus, Edit, Trash2, Calendar, DollarSign, TrendingDown, Filter, ChevronLeft, ChevronRight, Loader2, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -148,6 +148,11 @@ const Expense = () => {
   const [totalBalance, setTotalBalance] = useState<number>(0)
   const [categoryBreakdown, setCategoryBreakdown] = useState<CategorySummary[]>([])
   const [monthlyTrends, setMonthlyTrends] = useState<TrendData[]>([])
+  
+  // Loading states to prevent double clicks
+  const [isAddingExpense, setIsAddingExpense] = useState(false)
+  const [isEditingExpense, setIsEditingExpense] = useState(false)
+  const [isDeletingExpense, setIsDeletingExpense] = useState(false)
 
 
   const [currentPage, setCurrentPage] = useState(1)
@@ -260,54 +265,68 @@ const Expense = () => {
 
   // Handle adding a new entry
   const handleAddEntry = async () => {
+    if (isAddingExpense) return
     if (newEntry.description && newEntry.amount && newEntry.account_id) {
-      const result = await createTransaction(newEntry as CreateTransactionData)
-      
-      if (result) {
-        setIsAddModalOpen(false)
-        setNewEntry({
-          account_id: 1,
-          description: "",
-          category: "Food",
-          amount: "",
-          transaction_date: new Date().toISOString().split("T")[0],
-          transaction_type: "expense",
-        })
-        // Reload transactions
-        loadTransactions()
-        loadExpenseSummary()
+      setIsAddingExpense(true)
+      try {
+        const result = await createTransaction(newEntry as CreateTransactionData)
+        
+        if (result) {
+          setIsAddModalOpen(false)
+          setNewEntry({
+            account_id: 1,
+            description: "",
+            category: "Food",
+            amount: "",
+            transaction_date: new Date().toISOString().split("T")[0],
+            transaction_type: "expense",
+          })
+          // Reload transactions
+          loadTransactions()
+          loadExpenseSummary()
+        }
+      } finally {
+        setIsAddingExpense(false)
       }
     }
   }
 
   // Handle editing an entry
   const handleEditEntry = async () => {
+    if (isEditingExpense) return
     if (selectedEntry && selectedEntry.description && selectedEntry.amount) {
-      const updateData: CreateTransactionData = {
-        account_id: selectedEntry.account_id,
-        description: selectedEntry.description,
-        amount: selectedEntry.amount,
-        category: selectedEntry.category,
-        transaction_date: selectedEntry.transaction_date.split('T')[0],
-        transaction_type: "expense",
-      }
-      
-      const result = await updateTransaction(selectedEntry.id, updateData)
-      
-      if (result) {
-        setIsEditModalOpen(false)
-        setSelectedEntry(null)
-        // Reload transactions
-        loadTransactions()
-        loadExpenseSummary()
+      setIsEditingExpense(true)
+      try {
+        const updateData: CreateTransactionData = {
+          account_id: selectedEntry.account_id,
+          description: selectedEntry.description,
+          amount: selectedEntry.amount,
+          category: selectedEntry.category,
+          transaction_date: selectedEntry.transaction_date.split('T')[0],
+          transaction_type: "expense",
+        }
+        
+        const result = await updateTransaction(selectedEntry.id, updateData)
+        
+        if (result) {
+          setIsEditModalOpen(false)
+          setSelectedEntry(null)
+          // Reload transactions
+          loadTransactions()
+          loadExpenseSummary()
+        }
+      } finally {
+        setIsEditingExpense(false)
       }
     }
   }
 
   // Handle deleting an entry
   const handleDeleteEntry = async (id: number) => {
+    if (isDeletingExpense) return
     if (!confirm('Are you sure you want to delete this transaction?')) return;
     
+    setIsDeletingExpense(true)
     try {
       const result = await deleteTransaction(id);
       
@@ -329,6 +348,8 @@ const Expense = () => {
       console.error('Error deleting transaction:', error);
       // Reload data even on error to ensure UI is in sync with server
       await loadTransactions();
+    } finally {
+      setIsDeletingExpense(false)
     }
   };
 
@@ -443,10 +464,10 @@ const Expense = () => {
               <Button 
                 onClick={() => setIsAddModalOpen(true)} 
                 className="bg-rose-500 hover:bg-rose-600 text-white"
-                disabled={transactionsLoading}
+                disabled={transactionsLoading || isAddingExpense}
               >
-                {transactionsLoading ? (
-                  <><Loader2 className="h-4 w-4 animate-spin mr-2" />Loading...</>
+                {(transactionsLoading || isAddingExpense) ? (
+                  <><Loader2 className="h-4 w-4 animate-spin mr-2" />{transactionsLoading ? "Loading..." : "Adding..."}</>
                 ) : (
                   <><Plus className="h-4 w-4 mr-2" /> Add New Expense</>
                 )}
@@ -530,8 +551,18 @@ const Expense = () => {
                         <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => openEditModal(entry)}>
                           <Edit2 className="h-3 w-3 text-gray-500" />
                         </Button>
-                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-red-500 hover:text-red-700" onClick={() => handleDeleteEntry(entry.id)}>
-                          ×
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-6 w-6 p-0 text-red-500 hover:text-red-700" 
+                          onClick={() => handleDeleteEntry(entry.id)}
+                          disabled={isDeletingExpense}
+                        >
+                          {isDeletingExpense ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-3 w-3" />
+                          )}
                         </Button>
                       </div>
                     </motion.div>
@@ -764,8 +795,19 @@ const Expense = () => {
             <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleAddEntry} className="bg-rose-500 hover:bg-rose-600">
-              Add Expense
+            <Button 
+              onClick={handleAddEntry} 
+              className="bg-rose-500 hover:bg-rose-600"
+              disabled={isAddingExpense}
+            >
+              {isAddingExpense ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Adding...
+                </>
+              ) : (
+                "Add Expense"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -863,8 +905,19 @@ const Expense = () => {
             <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleEditEntry} className="bg-rose-500 hover:bg-rose-600">
-              Save Changes
+            <Button 
+              onClick={handleEditEntry} 
+              className="bg-rose-500 hover:bg-rose-600"
+              disabled={isEditingExpense}
+            >
+              {isEditingExpense ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Saving...
+                </>
+              ) : (
+                "Save Changes"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
