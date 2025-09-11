@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Plus, ChevronDown, Filter, Edit2, Loader2, Edit, Trash2, Calendar, DollarSign, TrendingUp, ChevronLeft, ChevronRight } from "lucide-react"
+import { Plus, ChevronDown, Filter, Edit2, Loader2, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
