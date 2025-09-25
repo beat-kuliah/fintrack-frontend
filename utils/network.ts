@@ -1,6 +1,6 @@
 // const baseUrl = "http://192.168.1.253:8000";
-// const baseUrl = "http://localhost:8000";
-const baseUrl = "https://fintrack-api.beatfraps.com";
+const baseUrl = "http://localhost:8000";
+// const baseUrl = "https://fintrack-api.beatfraps.com";
 
 export const authUrl = {
   login: `${baseUrl}/auth/login`,

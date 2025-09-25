@@ -2,7 +2,7 @@
 
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +27,11 @@ import {
   CartesianGrid,
   Pie,
 } from "recharts";
+
+// Consistent number formatting function
+const formatCurrency = (amount: number): string => {
+  return new Intl.NumberFormat('id-ID').format(amount);
+};
 
 const summaryData = [
   {
@@ -191,12 +196,27 @@ const pieData = [
 const COLORS = ["#2dd4bf", "#2dd4bf", "#2dd4bf"]; // Updated to match new colors
 
 const Budgeting = () => {
+  const [isMobile, setIsMobile] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+  
   const totalIncome = 11000000;
   const totalAllocated = expenseData.reduce(
     (sum, item) => sum + item.allocation,
     0
   );
   const usagePercentage = (totalAllocated / totalIncome) * 100;
+  
+  useEffect(() => {
+    setIsClient(true);
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   return (
     <div>
@@ -270,7 +290,7 @@ const Budgeting = () => {
                             {item.name}
                           </p>
                           <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">
-                            Rp{item.amount.toLocaleString()}
+                            Rp{isClient ? formatCurrency(item.amount) : item.amount}
                           </p>
                         </div>
                         <div
@@ -303,7 +323,7 @@ const Budgeting = () => {
                     <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-green-500" />
                   </div>
                   <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">
-                    Rp{totalIncome.toLocaleString()}
+                    Rp{isClient ? formatCurrency(totalIncome) : totalIncome}
                   </p>
                 </CardContent>
               </Card>
@@ -316,7 +336,7 @@ const Budgeting = () => {
                     <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4 text-blue-500" />
                   </div>
                   <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">
-                    Rp{(totalIncome - totalAllocated).toLocaleString()}
+                    Rp{isClient ? formatCurrency(totalIncome - totalAllocated) : (totalIncome - totalAllocated)}
                   </p>
                 </CardContent>
               </Card>
@@ -350,7 +370,8 @@ const Budgeting = () => {
                 </CardHeader>
                 <CardContent className="p-0 sm:p-6 sm:pt-0">
                   {/* Mobile Card View */}
-                  <div className="block sm:hidden space-y-3 p-4">
+                  {isClient && isMobile && (
+                  <div className="space-y-3 p-4">
                     {expenseData.map((item, index) => (
                       <motion.div
                         key={item.id}
@@ -372,7 +393,7 @@ const Budgeting = () => {
                         <div>
                           <p className="font-medium text-sm">{item.category}</p>
                           <p className="text-xs text-gray-600">
-                            Rp{item.allocation.toLocaleString()}
+                            Rp{formatCurrency(item.allocation)}
                           </p>
                         </div>
                         <div className="flex items-center justify-between">
@@ -389,9 +410,11 @@ const Budgeting = () => {
                       </motion.div>
                     ))}
                   </div>
+                  )}
 
                   {/* Desktop Table View */}
-                  <div className="hidden sm:block overflow-x-auto">
+                  {isClient && !isMobile && (
+                  <div className="overflow-x-auto">
                     <table className="w-full table-fixed">
                       <thead>
                         <tr className="border-b">
@@ -437,7 +460,7 @@ const Budgeting = () => {
                               </Badge>
                             </td>
                             <td className="p-2 font-mono text-sm">
-                              Rp{item.allocation.toLocaleString()}
+                              Rp{formatCurrency(item.allocation)}
                             </td>
                             <td className="p-2 flex items-center gap-5">
                               <div className="w-32">
@@ -453,6 +476,7 @@ const Budgeting = () => {
                       </tbody>
                     </table>
                   </div>
+                  )}
                 </CardContent>
               </Card>
             </motion.div>
@@ -489,7 +513,7 @@ const Budgeting = () => {
                         />
                         <Tooltip
                           formatter={(value: number) => [
-                            `Rp${value.toLocaleString()}`,
+                            `Rp${formatCurrency(value)}`,
                             "Amount",
                           ]}
                           labelStyle={{ color: "#374151" }}
