@@ -1,8 +1,6 @@
 import axios, { AxiosError, AxiosResponse } from "axios";
 import { userTokenKey } from "./contants";
 import { errorHandler } from "./errorHandler";
-import useLogout from "@/components/hooks/useLogout";
-// import useLogout from "@/app/components/hooks/useLogout";
 
 interface AxiosHandlerType {
   method: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
@@ -10,6 +8,7 @@ interface AxiosHandlerType {
   data?: any;
   handleError?: boolean;
   isAuthorized?: boolean;
+  onUnauthorized?: () => void;
 }
 
 interface ResponseType<T> {
@@ -17,15 +16,14 @@ interface ResponseType<T> {
   error: AxiosError | null;
 }
 
-const useAxiosHandler = () => {
-  const { logout } = useLogout();
-
+const useAxiosHandler = (onUnauthorized?: () => void) => {
   const axiosHandler = async <T>({
     method,
     url,
     data,
     isAuthorized,
     handleError = true,
+    onUnauthorized: requestOnUnauthorized,
   }: AxiosHandlerType): Promise<ResponseType<T>> => {
     const config = {
       url,
@@ -45,7 +43,10 @@ const useAxiosHandler = () => {
 
     const response = (await axios(config).catch((e: AxiosError) => {
       if (e.response?.status === 401) {
-        logout();
+        const logoutCallback = requestOnUnauthorized || onUnauthorized;
+        if (logoutCallback) {
+          logoutCallback();
+        }
       }
       if (handleError) {
         errorHandler(e);

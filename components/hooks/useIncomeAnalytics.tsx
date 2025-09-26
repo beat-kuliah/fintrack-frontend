@@ -50,8 +50,8 @@ export interface DateRangeParams {
   to_date: string;
 }
 
-const useIncomeAnalytics = () => {
-  const { axiosHandler } = useAxiosHandler();
+const useIncomeAnalytics = (onUnauthorized?: () => void) => {
+  const { axiosHandler } = useAxiosHandler(onUnauthorized);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

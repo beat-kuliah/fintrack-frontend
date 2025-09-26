@@ -43,3 +43,5 @@ export const incomeAnalyticsUrl = {
   dailyTrend: baseUrl + "/income-analytics/daily-trend",
   recent: baseUrl + "/income-analytics/recent",
 };
+
+export const budgetUrl = baseUrl + "/budgets";

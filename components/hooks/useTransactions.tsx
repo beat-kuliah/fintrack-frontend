@@ -41,8 +41,8 @@ export interface CreateTransactionData {
   transaction_type: string; // "income" or "expense"
 }
 
-const useTransactions = () => {
-  const { axiosHandler } = useAxiosHandler();
+const useTransactions = (onUnauthorized?: () => void) => {
+  const { axiosHandler } = useAxiosHandler(onUnauthorized);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -75,7 +75,8 @@ const useTransactions = () => {
       }
       
       return response.data;
-    } catch {
+    } catch (err) {
+      console.error('Error fetching transactions:', err);
       setError('Failed to fetch transactions');
       return null;
     } finally {

@@ -1,222 +1,231 @@
 "use client";
 
-import { Separator } from "@/components/ui/separator";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import {
-  Calendar,
-  TrendingUp,
-  DollarSign,
-  PieChart,
-  BarChart3,
-} from "lucide-react";
-import {
-  PieChart as RechartsPieChart,
-  Cell,
-  ResponsiveContainer,
-  Tooltip,
-  Legend,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Pie,
-} from "recharts";
+import { useState, useEffect, useCallback } from "react"
+import { motion } from "framer-motion"
+import { Plus, Loader2, ChevronDown, Edit2, Trash2 } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { SidebarTrigger } from "@/components/ui/sidebar"
+import { Separator } from "@/components/ui/separator"
+import { toast } from "sonner"
+import BudgetForm from "@/components/BudgetForm"
+import useBudgetAPI, { BudgetCategory, MonthlyBudget } from "@/components/hooks/useBudgetAPI"
+import { BudgetRequest } from "@/utils/budgetService"
+import useBudgetCategories from "@/components/hooks/useBudgetCategories"
+import useLogout from "@/components/hooks/useLogout"
+import withAuth from "@/components/hocs/withAuth"
 
-// Consistent number formatting function
-const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('id-ID').format(amount);
-};
 
-const summaryData = [
-  {
-    name: "BCA",
-    amount: 4200000,
-    color: "bg-blue-600",
-    textColor: "text-blue-600",
-  },
-  {
-    name: "Jago",
-    amount: 5550000,
-    color: "bg-purple-500",
-    textColor: "text-purple-500",
-  },
-  {
-    name: "BNI",
-    amount: 4800000,
-    color: "bg-green-500",
-    textColor: "text-green-500",
-  },
-  {
-    name: "Mandiri",
-    amount: 4500000,
-    color: "bg-red-400",
-    textColor: "text-red-400",
-  },
-];
-
-const expenseData = [
-  {
-    id: 1,
-    account: "BCA",
-    category: "General Savings",
-    type: "Savings",
-    allocation: 2000000,
-    percentage: 18.18,
-    color: "bg-teal-400", // Changed from bg-green-500
-  },
-  {
-    id: 2,
-    account: "Jago",
-    category: "Emergency Funds",
-    type: "Savings",
-    allocation: 1500000,
-    percentage: 13.64,
-    color: "bg-teal-400", // Changed from bg-green-500
-  },
-  {
-    id: 3,
-    account: "BNI",
-    category: "Deposits",
-    type: "Savings",
-    allocation: 1000000,
-    percentage: 9.09,
-    color: "bg-teal-400", // Changed from bg-green-500
-  },
-  {
-    id: 4,
-    account: "BCA",
-    category: "Home Rent",
-    type: "Needs",
-    allocation: 1350000,
-    percentage: 12.27,
-    color: "bg-teal-400", // Changed from bg-yellow-500
-  },
-  {
-    id: 5,
-    account: "BCA",
-    category: "Utilities",
-    type: "Needs",
-    allocation: 450000,
-    percentage: 4.09,
-    color: "bg-teal-400", // Changed from bg-yellow-500
-  },
-  {
-    id: 6,
-    account: "BCA",
-    category: "Food",
-    type: "Needs",
-    allocation: 1750000,
-    percentage: 15.91,
-    color: "bg-teal-400", // Changed from bg-yellow-500
-  },
-  {
-    id: 7,
-    account: "BNI",
-    category: "Supplies",
-    type: "Needs",
-    allocation: 500000,
-    percentage: 4.55,
-    color: "bg-teal-400", // Changed from bg-yellow-500
-  },
-  {
-    id: 8,
-    account: "BCA",
-    category: "Transportation",
-    type: "Needs",
-    allocation: 300000,
-    percentage: 2.73,
-    color: "bg-teal-400", // Changed from bg-yellow-500
-  },
-  {
-    id: 9,
-    account: "BCA",
-    category: "Healthcare",
-    type: "Needs",
-    allocation: 700000,
-    percentage: 6.36,
-    color: "bg-teal-400", // Changed from bg-yellow-500
-  },
-  {
-    id: 10,
-    account: "BNI",
-    category: "Debt",
-    type: "Needs",
-    allocation: 500000,
-    percentage: 4.55,
-    color: "bg-teal-400", // Changed from bg-yellow-500
-  },
-  {
-    id: 11,
-    account: "Jago",
-    category: "Shopping",
-    type: "Wants",
-    allocation: 500000,
-    percentage: 4.55,
-    color: "bg-teal-400", // Changed from bg-red-400
-  },
-  {
-    id: 12,
-    account: "BCA",
-    category: "Entertainment",
-    type: "Wants",
-    allocation: 250000,
-    percentage: 2.27,
-    color: "bg-teal-400", // Changed from bg-red-400
-  },
-  {
-    id: 13,
-    account: "BNI",
-    category: "Gifts",
-    type: "Wants",
-    allocation: 200000,
-    percentage: 1.82,
-    color: "bg-teal-400", // Changed from bg-red-400
-  },
-];
-
-const chartData = [
-  { name: "BCA", value: 6200000, color: "#3b82f6" },
-  { name: "Jago", value: 2000000, color: "#8b5cf6" },
-  { name: "BNI", value: 1700000, color: "#10b981" },
-  { name: "Mandiri", value: 1100000, color: "#ef4444" },
-];
-
-const pieData = [
-  { name: "Savings", value: 40.9, color: "#2dd4bf" }, // Changed to emerald-500
-  { name: "Needs", value: 50.5, color: "#2dd4bf" }, // Changed to amber-500
-  { name: "Wants", value: 8.6, color: "#2dd4bf" }, // Changed to rose-500
-];
-
-const COLORS = ["#2dd4bf", "#2dd4bf", "#2dd4bf"]; // Updated to match new colors
 
 const Budgeting = () => {
-  const [isMobile, setIsMobile] = useState(false);
-  const [isClient, setIsClient] = useState(false);
+  console.log('🚀 Budgeting component mounted');
+  const { logout } = useLogout();
   
-  const totalIncome = 11000000;
-  const totalAllocated = expenseData.reduce(
-    (sum, item) => sum + item.allocation,
-    0
-  );
-  const usagePercentage = (totalAllocated / totalIncome) * 100;
+  // State management
+  const [budgetData, setBudgetData] = useState<BudgetCategory[]>([]);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedBudget, setSelectedBudget] = useState<BudgetCategory | null>(null);
+  const [isAddingBudget, setIsAddingBudget] = useState(false);
+  const [isEditingBudget, setIsEditingBudget] = useState(false);
+  const [isDeletingBudget, setIsDeletingBudget] = useState(false);
   
+  // Date selection
+  const [selectedMonth, setSelectedMonth] = useState<string>(() => {
+    const now = new Date()
+    const monthNames = [
+      "january", "february", "march", "april", "may", "june",
+      "july", "august", "september", "october", "november", "december"
+    ]
+    return monthNames[now.getMonth()]
+  })
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
+  
+  // API hooks
+  const {
+    loading: budgetLoading,
+    error: budgetError,
+    getBudgets,
+    createBudget,
+    updateBudget,
+    deleteBudget,
+    convertBudgetsToFrontend,
+  } = useBudgetAPI(logout);
+  
+  const {
+    categories,
+    loading: categoriesLoading,
+    error: categoriesError,
+    fetchBudgetCategories,
+  } = useBudgetCategories(logout);
+  
+  // Helper function to get detailed period display
+  const getDetailedPeriod = (month: string, year: number) => {
+    const monthNames: { [key: string]: string } = {
+      january: 'Januari', february: 'Februari', march: 'Maret', april: 'April', 
+      may: 'Mei', june: 'Juni', july: 'Juli', august: 'Agustus', 
+      september: 'September', october: 'Oktober', november: 'November', december: 'Desember'
+    }
+    
+    const monthMap: { [key: string]: number } = {
+      january: 0, february: 1, march: 2, april: 3, may: 4, june: 5,
+      july: 6, august: 7, september: 8, october: 9, november: 10, december: 11
+    }
+    
+    const monthIndex = monthMap[month]
+    const lastDay = new Date(year, monthIndex + 1, 0).getDate()
+    
+    return `1 - ${lastDay} ${monthNames[month]} ${year}`
+  }
+  
+  // Load current budget data
+  const loadBudgets = useCallback(async (retryCount = 0) => {
+    try {
+      console.log('🔍 Loading budgets... (attempt:', retryCount + 1, ')');
+      const budgets = await getBudgets();
+      console.log('📊 Raw API response:', budgets);
+      
+      if (!budgets || !Array.isArray(budgets)) {
+        console.warn('⚠️ Invalid budget response format');
+        setBudgetData([]);
+        return;
+      }
+      
+      const convertedBudget = convertBudgetsToFrontend(budgets);
+      console.log('🔄 Converted budget:', convertedBudget);
+      console.log('📋 Categories to set:', convertedBudget.categories);
+      
+      setBudgetData(convertedBudget.categories || []);
+      console.log('✅ Budget data set successfully');
+    } catch (error) {
+      console.error('❌ Error loading budget:', error);
+      
+      // Retry logic for network errors
+      if (retryCount < 2 && error instanceof Error && error.message.includes('Network')) {
+        console.log('🔄 Retrying budget load...');
+        setTimeout(() => loadBudgets(retryCount + 1), 1000 * (retryCount + 1));
+        return;
+      }
+      
+      toast.error(`Gagal memuat data budget: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setBudgetData([]);
+    }
+  }, [getBudgets, convertBudgetsToFrontend]);
+  
+  // Load data on component mount and when month/year changes
   useEffect(() => {
-    setIsClient(true);
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 640);
-    };
+    console.log('🔄 useEffect triggered - selectedMonth:', selectedMonth, 'selectedYear:', selectedYear);
+    if (!budgetLoading && !categoriesLoading) {
+      loadBudgets();
+    }
+  }, [selectedMonth, selectedYear, loadBudgets, budgetLoading, categoriesLoading]);
+  
+  // Load categories only once on component mount
+  useEffect(() => {
+    console.log('🔄 Loading categories on mount');
+    if (!categoriesLoading && categories.length === 0) {
+      fetchBudgetCategories();
+    }
+  }, [fetchBudgetCategories, categoriesLoading, categories.length]);
+  
+  // Handle save budget (create/update)
+  const handleSaveBudget = async (budgetData: Omit<MonthlyBudget, 'id' | 'createdAt' | 'updatedAt'>) => {
+    setIsAddingBudget(true);
+    try {
+      // Convert each category to BudgetRequest format for API
+      const budgetPromises = budgetData.categories.map(async (category) => {
+        const budgetRequest: BudgetRequest = {
+          category: category.name,
+          target_amount: category.budgetedAmount.toString(),
+          period_type: 'monthly',
+          period_start: `${budgetData.year}-${String(new Date().getMonth() + 1).padStart(2, '0')}-01`,
+          period_end: `${budgetData.year}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${new Date(budgetData.year, new Date().getMonth() + 1, 0).getDate()}`,
+          is_active: true
+        };
+        
+        return await createBudget(budgetRequest);
+      });
+      
+      const results = await Promise.all(budgetPromises);
+      const successCount = results.filter(result => result !== null).length;
+      
+      if (successCount > 0) {
+        toast.success(`${successCount} budget berhasil disimpan!`);
+        setIsAddModalOpen(false);
+        loadBudgets();
+      } else {
+        toast.error('Gagal menyimpan budget');
+      }
+    } catch (error) {
+      console.error('Error saving budget:', error);
+      toast.error('Gagal menyimpan budget');
+    } finally {
+      setIsAddingBudget(false);
+    }
+  };
+  
+  // Handle delete budget
+  const handleDeleteBudget = async (budgetId: string) => {
+    if (!confirm('Apakah Anda yakin ingin menghapus budget ini?')) return;
     
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
+    setIsDeletingBudget(true);
+    try {
+      const result = await deleteBudget(parseInt(budgetId));
+      if (result) {
+        toast.success('Budget berhasil dihapus!');
+        loadBudgets();
+      } else {
+        toast.error('Gagal menghapus budget');
+      }
+    } catch (error) {
+      console.error('Error deleting budget:', error);
+      toast.error('Gagal menghapus budget');
+    } finally {
+      setIsDeletingBudget(false);
+    }
+  };
+  
+  // Open edit modal
+  const openEditModal = (budget: BudgetCategory) => {
+    setSelectedBudget(budget);
+    setIsEditModalOpen(true);
+  };
+  
+  // Handle edit budget
+  const handleEditBudget = async (budgetData: Omit<MonthlyBudget, 'id' | 'createdAt' | 'updatedAt'>) => {
+    if (!selectedBudget) return;
     
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+    setIsEditingBudget(true);
+    try {
+      // Find the category to update
+      const categoryToUpdate = budgetData.categories.find(cat => cat.id === selectedBudget.id);
+      if (categoryToUpdate) {
+        const budgetRequest: BudgetRequest = {
+          category: categoryToUpdate.name,
+          target_amount: categoryToUpdate.budgetedAmount.toString(),
+          period_type: 'monthly',
+          period_start: `${budgetData.year}-${String(new Date().getMonth() + 1).padStart(2, '0')}-01`,
+          period_end: `${budgetData.year}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${new Date(budgetData.year, new Date().getMonth() + 1, 0).getDate()}`,
+          is_active: true
+        };
+        
+        const result = await updateBudget(parseInt(selectedBudget.id), budgetRequest);
+        if (result) {
+          toast.success('Budget berhasil diupdate!');
+          setIsEditModalOpen(false);
+          setSelectedBudget(null);
+          loadBudgets();
+        } else {
+          toast.error('Gagal mengupdate budget');
+        }
+      }
+    } catch (error) {
+      console.error('Error updating budget:', error);
+      toast.error('Gagal mengupdate budget');
+    } finally {
+      setIsEditingBudget(false);
+    }
+  };
 
   return (
     <div>
@@ -225,387 +234,225 @@ const Budgeting = () => {
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 h-4" />
           <h1 className="text-sm sm:text-lg font-semibold truncate">
-            Budgeting
+            Budget Management
           </h1>
         </div>
       </header>
 
       <div className="flex flex-1 flex-col gap-2 sm:gap-4 p-2 sm:p-4 pt-0">
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-2 sm:p-4 rounded-xl">
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-2 sm:p-4 rounded-xl">
           <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
-            {/* Header */}
+            
+            {/* Month and Year Selection */}
             <motion.div
-              initial={{ opacity: 0, y: -20 }}
+              initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row justify-between items-start sm:items-center gap-4 bg-white rounded-lg p-4 sm:p-6 shadow-sm"
+              className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white rounded-lg p-4 border-b border-gray-200"
             >
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 w-full">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500" />
-                  <span className="text-xs sm:text-sm text-gray-600">
-                    25 January 2024
-                  </span>
-                </div>
-                <Badge
-                  variant="outline"
-                  className="text-orange-500 border-orange-200 text-xs"
-                >
-                  Next review in 5 days
-                </Badge>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-blue-400">Budget Period:</span>
+                <span className="text-sm font-medium">{getDetailedPeriod(selectedMonth, selectedYear)}</span>
+              </div>
+              <div className="flex items-center gap-2">
+              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                <SelectTrigger className="w-32 bg-white text-blue-500 border-blue-200">
+                  <SelectValue placeholder="Month" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="january">January</SelectItem>
+                  <SelectItem value="february">February</SelectItem>
+                  <SelectItem value="march">March</SelectItem>
+                  <SelectItem value="april">April</SelectItem>
+                  <SelectItem value="may">May</SelectItem>
+                  <SelectItem value="june">June</SelectItem>
+                  <SelectItem value="july">July</SelectItem>
+                  <SelectItem value="august">August</SelectItem>
+                  <SelectItem value="september">September</SelectItem>
+                  <SelectItem value="october">October</SelectItem>
+                  <SelectItem value="november">November</SelectItem>
+                  <SelectItem value="december">December</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(Number(value))}>
+                <SelectTrigger className="w-20 bg-white text-blue-500 border-blue-200">
+                  <SelectValue placeholder="Year" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 12 }, (_, i) => 2025 + i).map(year => (
+                    <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               </div>
             </motion.div>
 
-            {/* Title */}
+            {/* Error Messages */}
+            {(budgetError || categoriesError) && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4"
+              >
+                {budgetError && <div>Budget: {budgetError}</div>}
+                {categoriesError && <div>Categories: {categoriesError}</div>}
+              </motion.div>
+            )}
+
+            {/* Add Button and Loading */}
             <motion.div
-              initial={{ opacity: 0, y: -20 }}
+              initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="text-center px-4"
+              transition={{ delay: 0.2 }}
+              className="flex justify-between items-center"
             >
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800 mb-2">
-                Budgeting Summary Sheet
-              </h1>
-              <p className="text-sm sm:text-base text-gray-600">
-                Monitor your financial portfolio and track asset allocation
-              </p>
+              <div>
+                {(budgetLoading || categoriesLoading) && (
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                    <span className="text-sm text-gray-500">
+                      {budgetLoading && categoriesLoading ? 'Loading data...' : 
+                       budgetLoading ? 'Loading budgets...' : 'Loading categories...'}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <Button 
+                onClick={() => setIsAddModalOpen(true)} 
+                className="bg-blue-500 hover:bg-blue-600 text-white"
+                disabled={budgetLoading || isAddingBudget}
+              >
+                {(budgetLoading || isAddingBudget) ? (
+                  <><Loader2 className="h-4 w-4 animate-spin mr-2" />{budgetLoading ? "Loading..." : "Adding..."}</>
+                ) : (
+                  <><Plus className="h-4 w-4 mr-2" /> Add New Budget</>
+                )}
+              </Button>
             </motion.div>
 
-            {/* Summary Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
-              {summaryData.map((item, index) => (
-                <motion.div
-                  key={item.name}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 + index * 0.1 }}
-                >
-                  <Card className="relative overflow-hidden">
-                    <div
-                      className={`absolute top-0 left-0 w-full h-2 ${item.color}`}
-                    />
-                    <CardContent className="p-3 sm:p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">
-                            {item.name}
-                          </p>
-                          <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">
-                            Rp{isClient ? formatCurrency(item.amount) : item.amount}
-                          </p>
-                        </div>
-                        <div
-                          className={`p-2 rounded-full ${item.color} bg-opacity-10 flex-shrink-0`}
-                        >
-                          <DollarSign
-                            className={`h-4 w-4 sm:h-6 sm:w-6 ${item.textColor}`}
-                          />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
-
-            {/* Summary Stats */}
+            {/* Budget Table */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6 }}
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4"
+              transition={{ delay: 0.3 }}
+              className="bg-white rounded-lg shadow-sm overflow-hidden"
             >
-              <Card>
-                <CardContent className="p-3 sm:p-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs sm:text-sm font-medium text-gray-600">
-                      Total Income
-                    </span>
-                    <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-green-500" />
-                  </div>
-                  <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">
-                    Rp{isClient ? formatCurrency(totalIncome) : totalIncome}
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-3 sm:p-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs sm:text-sm font-medium text-gray-600">
-                      Non-allocated
-                    </span>
-                    <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4 text-blue-500" />
-                  </div>
-                  <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">
-                    Rp{isClient ? formatCurrency(totalIncome - totalAllocated) : (totalIncome - totalAllocated)}
-                  </p>
-                </CardContent>
-              </Card>
-              <Card className="sm:col-span-2 lg:col-span-1">
-                <CardContent className="p-3 sm:p-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs sm:text-sm font-medium text-gray-600">
-                      Usage Percentage
-                    </span>
-                    <PieChart className="h-3 w-3 sm:h-4 sm:w-4 text-purple-500" />
-                  </div>
-                  <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">
-                    {usagePercentage.toFixed(1)}%
-                  </p>
-                </CardContent>
-              </Card>
-            </motion.div>
+              {/* Table Header */}
+              <div className="grid grid-cols-12 bg-gray-100 p-3 border-b border-gray-200 text-sm font-medium text-gray-600">
+                <div className="col-span-3 flex items-center gap-1">
+                  Category <ChevronDown className="h-3 w-3" />
+                </div>
+                <div className="col-span-2">Budget Amount</div>
+                <div className="col-span-2">Type</div>
+                <div className="col-span-2">Period</div>
+                <div className="col-span-2">Status</div>
+                <div className="col-span-1 text-center">Actions</div>
+              </div>
 
-            {/* Expense Table */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7 }}
-            >
-              <Card>
-                <CardHeader className="p-4 sm:p-6">
-                  <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-                    <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5" />
-                    Expenses List
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-0 sm:p-6 sm:pt-0">
-                  {/* Mobile Card View */}
-                  {isClient && isMobile && (
-                  <div className="space-y-3 p-4">
-                    {expenseData.map((item, index) => (
+              {/* Table Body */}
+              <div className="max-h-[calc(100vh-300px)] overflow-y-auto">
+                {(() => {
+                  console.log('🎯 Current budgetData state:', budgetData);
+                  console.log('📊 budgetData.length:', budgetData.length);
+                  console.log('⏳ budgetLoading:', budgetLoading);
+                  return null;
+                })()}
+                {budgetLoading ? (
+                  <div className="p-8 text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
+                      <span className="text-gray-500">Loading budget data...</span>
+                    </div>
+                  </div>
+                ) : budgetData.length === 0 ? (
+                  <div className="p-8 text-center text-gray-500">
+                    <div className="mb-2">📊</div>
+                    <div className="font-medium mb-1">No budgets found</div>
+                    <div className="text-sm">Create your first budget for {selectedMonth} {selectedYear}</div>
+                  </div>
+                ) : (
+                  budgetData.map((budget, index) => {
+                    console.log(`🔍 Rendering budget ${index + 1}:`, budget);
+                    return (
                       <motion.div
-                        key={item.id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.8 + index * 0.05 }}
-                        className="bg-gray-50 rounded-lg p-3 space-y-2"
+                        key={budget.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 + index * 0.03 }}
+                        className="grid grid-cols-12 p-3 border-b border-gray-100 hover:bg-gray-50 text-sm"
                       >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="text-xs">
-                              {item.account}
-                            </Badge>
-                          </div>
-                          <Badge className={`${item.color} text-white text-xs`}>
-                            {item.type}
-                          </Badge>
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm">{item.category}</p>
-                          <p className="text-xs text-gray-600">
-                            Rp{formatCurrency(item.allocation)}
-                          </p>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-gray-600">
-                            {item.percentage}%
+                        <div className="col-span-3 font-medium">{budget.name}</div>
+                        <div className="col-span-2 font-mono">Rp{(budget.budgetedAmount || 0).toLocaleString()}</div>
+                        <div className="col-span-2">
+                          <span className={`px-2 py-1 rounded-full text-xs ${
+                            budget.type === 'needs' ? 'bg-red-100 text-red-600' :
+                            budget.type === 'wants' ? 'bg-blue-100 text-blue-600' :
+                            'bg-green-100 text-green-600'
+                          }`}>
+                            {budget.type === 'needs' ? 'Kebutuhan' : budget.type === 'wants' ? 'Keinginan' : 'Tabungan'}
                           </span>
-                          <div className="w-20">
-                            <Progress
-                              value={item.percentage * 5}
-                              className="h-1"
-                            />
-                          </div>
+                        </div>
+                        <div className="col-span-2 text-gray-600">{selectedMonth} {selectedYear}</div>
+                        <div className="col-span-2">
+                          <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-600">
+                            Active
+                          </span>
+                        </div>
+                        <div className="col-span-1 flex justify-center gap-1">
+                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => openEditModal(budget)}>
+                            <Edit2 className="h-3 w-3 text-gray-500" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-6 w-6 p-0 text-red-500 hover:text-red-700" 
+                            onClick={() => handleDeleteBudget(budget.id)}
+                            disabled={isDeletingBudget}
+                          >
+                            {isDeletingBudget ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-3 w-3" />
+                            )}
+                          </Button>
                         </div>
                       </motion.div>
-                    ))}
-                  </div>
-                  )}
-
-                  {/* Desktop Table View */}
-                  {isClient && !isMobile && (
-                  <div className="overflow-x-auto">
-                    <table className="w-full table-fixed">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="text-left first:pl-0 last:pr-0 px-0 py-2 font-medium text-gray-600 text-sm">
-                            Bank
-                          </th>
-                          <th className="text-left first:pl-0 last:pr-0 px-0 py-2 font-medium text-gray-600 text-sm">
-                            Expenses List
-                          </th>
-                          <th className="text-left first:pl-0 last:pr-0 px-0 py-2 font-medium text-gray-600 text-sm">
-                            Main Category
-                          </th>
-                          <th className="text-left first:pl-0 last:pr-0 px-0 py-2 font-medium text-gray-600 text-sm">
-                            Allocation
-                          </th>
-                          <th className="text-left first:pl-0 last:pr-0 px-0 py-2 font-medium text-gray-600 text-sm">
-                            Progress
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {expenseData.map((item, index) => (
-                          <motion.tr
-                            key={item.id}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.8 + index * 0.05 }}
-                            className="border-b hover:bg-gray-50 transition-colors"
-                          >
-                            <td className="p-2">
-                              <Badge variant="outline" className="text-xs">
-                                {item.account}
-                              </Badge>
-                            </td>
-                            <td className="p-2 font-medium text-sm">
-                              {item.category}
-                            </td>
-                            <td className="p-2">
-                              <Badge
-                                className={`${item.color} text-white text-xs`}
-                              >
-                                {item.type}
-                              </Badge>
-                            </td>
-                            <td className="p-2 font-mono text-sm">
-                              Rp{formatCurrency(item.allocation)}
-                            </td>
-                            <td className="p-2 flex items-center gap-5">
-                              <div className="w-32">
-                                <Progress
-                                  value={item.percentage * 5}
-                                  className="h-2 pr-0"
-                                />
-                              </div>
-                              {item.percentage}%
-                            </td>
-                          </motion.tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  )}
-                </CardContent>
-              </Card>
+                    );
+                  })
+                )}
+              </div>
             </motion.div>
-
-            {/* Charts */}
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
-              {/* Bar Chart */}
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.9 }}
-              >
-                <Card>
-                  <CardHeader className="p-4 sm:p-6">
-                    <CardTitle className="text-base sm:text-lg">
-                      Portfolio by Bank
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4 sm:p-6 sm:pt-0">
-                    <ResponsiveContainer width="100%" height={342}>
-                      <BarChart data={chartData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis
-                          dataKey="name"
-                          fontSize={12}
-                          tick={{ fontSize: 12 }}
-                        />
-                        <YAxis
-                          tickFormatter={(value) =>
-                            `${(value / 1000000).toFixed(1)}M`
-                          }
-                          fontSize={12}
-                          tick={{ fontSize: 12 }}
-                        />
-                        <Tooltip
-                          formatter={(value: number) => [
-                            `Rp${formatCurrency(value)}`,
-                            "Amount",
-                          ]}
-                          labelStyle={{ color: "#374151" }}
-                        />
-                        <Bar
-                          dataKey="value"
-                          fill="#3b82f6"
-                          radius={[4, 4, 0, 0]}
-                        />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-              </motion.div>
-
-              {/* Pie Chart */}
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 1 }}
-              >
-                <Card>
-                  <CardHeader className="p-4 sm:p-6">
-                    <CardTitle className="text-base sm:text-lg">
-                      Allocation by Type
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4 sm:p-6 sm:pt-0">
-                    <ResponsiveContainer width="100%" height={250}>
-                      <RechartsPieChart>
-                        <Pie
-                          data={pieData}
-                          cx="50%"
-                          cy="50%"
-                          outerRadius={80}
-                          fill="#8884d8"
-                          dataKey="value"
-                          label={({ name, percent }) =>
-                            `${name} ${(percent * 100).toFixed(1)}%`
-                          }
-                          labelLine={false}
-                          fontSize={10}
-                        >
-                          {pieData.map((entry, index) => (
-                            <Cell
-                              key={`cell-${index}`}
-                              fill={COLORS[index % COLORS.length]}
-                            />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          formatter={(value: number) => [
-                            `${value}%`,
-                            "Percentage",
-                          ]}
-                        />
-                        <Legend wrapperStyle={{ fontSize: "12px" }} />
-                      </RechartsPieChart>
-                    </ResponsiveContainer>
-                    <div className="mt-4 space-y-2">
-                      {pieData.map((item, index) => (
-                        <motion.div
-                          key={item.name}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 1.2 + index * 0.1 }}
-                          className="flex items-center justify-between"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div
-                              className="w-3 h-3 sm:w-4 sm:h-4 rounded-full"
-                              style={{ backgroundColor: item.color }}
-                            />
-                            <span className="text-xs sm:text-sm font-medium">
-                              {item.name}
-                            </span>
-                          </div>
-                          <span className="text-xs sm:text-sm font-bold">
-                            {item.value}%
-                          </span>
-                        </motion.div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </div>
           </div>
         </div>
       </div>
+
+      {/* Add Budget Modal */}
+      {isAddModalOpen && (
+        <BudgetForm
+          onSave={handleSaveBudget}
+          loading={isAddingBudget}
+          availableCategories={categories}
+        />
+      )}
+
+      {/* Edit Budget Modal */}
+      {isEditModalOpen && selectedBudget && (
+        <BudgetForm
+          initialBudget={{
+            id: 'edit-budget',
+            month: selectedMonth,
+            year: selectedYear,
+            totalIncome: 0,
+            categories: [selectedBudget],
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          }}
+          onSave={handleEditBudget}
+          loading={isEditingBudget}
+          availableCategories={categories}
+        />
+      )}
     </div>
   );
 };
 
-export default Budgeting;
+export default withAuth(Budgeting);

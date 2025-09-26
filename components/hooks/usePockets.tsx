@@ -21,8 +21,8 @@ export interface Account {
 // API response is directly an array of accounts
 export type ActiveAccountsResponse = Account[];
 
-const usePockets = () => {
-  const { axiosHandler } = useAxiosHandler();
+const usePockets = (onUnauthorized?: () => void) => {
+  const { axiosHandler } = useAxiosHandler(onUnauthorized);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

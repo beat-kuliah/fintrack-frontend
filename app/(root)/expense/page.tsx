@@ -17,9 +17,12 @@ import {
 import { Label } from "@/components/ui/label"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
+import { toast } from "sonner"
 import useTransactions, { Transaction, TransactionFilters, CreateTransactionData } from "@/components/hooks/useTransactions"
 import useExpenseAnalytics, { CategorySummary, TrendData } from "@/components/hooks/useExpenseAnalytics"
 import usePockets, { Account } from "@/components/hooks/usePockets"
+import useLogout from "@/components/hooks/useLogout"
+import useBudgetCategories from "@/components/hooks/useBudgetCategories"
 
 // Updated interface to match API response
 interface ExpenseEntry {
@@ -102,22 +105,14 @@ const getDetailedPeriod = (month: string, year: number) => {
   return `1 - ${lastDay} ${monthNames[month]} ${year}`
 }
 
-// Available categories
-const categories = [
-  "Food",
-  "Supplies",
-  "Entertainment",
-  "Transportation",
-  "Healthcare",
-  "Shopping",
-  "Gifts",
-  "Utilities",
-  "Home Rent",
-]
+// Categories will be loaded from API
 
 // Available accounts will be loaded from API
 
 const Expense = () => {
+  // Authentication hook
+  const { logout } = useLogout();
+  
   // API hooks
   const { 
     loading: transactionsLoading, 
@@ -126,7 +121,7 @@ const Expense = () => {
     createTransaction, 
     updateTransaction, 
     deleteTransaction 
-  } = useTransactions()
+  } = useTransactions(logout)
   
   const { 
     loading: analyticsLoading, 
@@ -134,11 +129,18 @@ const Expense = () => {
     getExpenseSummary,
     getCategoryBreakdown,
     getMonthlyTrends
-  } = useExpenseAnalytics()
+  } = useExpenseAnalytics(logout)
   
   const {
     getActiveAccounts
-  } = usePockets()
+  } = usePockets(logout)
+  
+  const {
+    categories,
+    loading: categoriesLoading,
+    error: categoriesError,
+    fetchBudgetCategories
+  } = useBudgetCategories(logout)
 
   // State management
   const [expenseData, setExpenseData] = useState<ExpenseEntry[]>([])
@@ -174,7 +176,7 @@ const Expense = () => {
   const [newEntry, setNewEntry] = useState<Partial<CreateTransactionData>>({
     account_id: 1,
     description: "",
-    category: "Food",
+    category: "",
     amount: "",
     transaction_date: new Date().toISOString().split("T")[0],
     transaction_type: "expense",
@@ -185,14 +187,39 @@ const Expense = () => {
     loadTransactions()
     loadExpenseSummary()
     loadAccounts()
+    fetchBudgetCategories()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, selectedCategory, selectedMonth, selectedYear])
   
-  // Load accounts on component mount
+  // Load accounts and categories on component mount
   useEffect(() => {
     loadAccounts()
+    fetchBudgetCategories()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+  
+  // Set default category when categories are loaded
+  useEffect(() => {
+    if (categories.length > 0 && !newEntry.category) {
+      setNewEntry(prev => ({
+        ...prev,
+        category: categories[0]
+      }))
+    }
+  }, [categories, newEntry.category])
+
+  // Handle errors
+  useEffect(() => {
+    if (transactionsError) {
+      toast.error(`Transactions Error: ${transactionsError}`)
+    }
+    if (analyticsError) {
+      toast.error(`Analytics Error: ${analyticsError}`)
+    }
+    if (categoriesError) {
+      toast.error(`Categories Error: ${categoriesError}`)
+    }
+  }, [transactionsError, analyticsError, categoriesError])
 
   // Load transactions with current filters
   const loadTransactions = async () => {
@@ -276,7 +303,7 @@ const Expense = () => {
           setNewEntry({
             account_id: 1,
             description: "",
-            category: "Food",
+            category: categories.length > 0 ? categories[0] : "",
             amount: "",
             transaction_date: new Date().toISOString().split("T")[0],
             transaction_type: "expense",
@@ -431,17 +458,7 @@ const Expense = () => {
               </div>
             </motion.div>
 
-            {/* Error Messages */}
-            {(transactionsError || analyticsError) && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4"
-              >
-                {transactionsError && <div>Transactions: {transactionsError}</div>}
-                {analyticsError && <div>Analytics: {analyticsError}</div>}
-              </motion.div>
-            )}
+
 
             {/* Add Button and Loading */}
             <motion.div
@@ -494,13 +511,23 @@ const Expense = () => {
                       <SelectValue placeholder="All" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All</SelectItem>
-                      {categories.map((category) => (
-                        <SelectItem key={category} value={category}>
-                          {category}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  {categoriesLoading ? (
+                    <SelectItem value="loading" disabled>
+                      Loading categories...
+                    </SelectItem>
+                  ) : categories.length > 0 ? (
+                    categories.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="no-categories" disabled>
+                      No categories available
+                    </SelectItem>
+                  )}
+                </SelectContent>
                   </Select>
                 </div>
                 <div className="col-span-2 text-right">Total</div>
@@ -749,11 +776,21 @@ const Expense = () => {
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
+                  {categoriesLoading ? (
+                    <SelectItem value="loading" disabled>
+                      Loading categories...
                     </SelectItem>
-                  ))}
+                  ) : categories.length > 0 ? (
+                    categories.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="no-categories" disabled>
+                      No categories available
+                    </SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -858,11 +895,21 @@ const Expense = () => {
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
+                    {categoriesLoading ? (
+                      <SelectItem value="loading" disabled>
+                        Loading categories...
                       </SelectItem>
-                    ))}
+                    ) : categories.length > 0 ? (
+                      categories.map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="no-categories" disabled>
+                        No categories available
+                      </SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>

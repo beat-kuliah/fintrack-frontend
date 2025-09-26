@@ -17,13 +17,13 @@ const withAuth = <T extends object>(
   WrapperComponent: React.ComponentType<T>
 ) => {
   const WithAuth = (props: T) => {
-    const [checking, setChecking] = useState(true);
+    const [loading, setLoading] = useState(true);
     const {
       dispatch,
       state: { activeUser },
     } = useContext(store);
     const { logout } = useLogout();
-    const { axiosHandler } = useAxiosHandler();
+    const { axiosHandler } = useAxiosHandler(logout);
 
     const handleAuth = async () => {
       const userToken = localStorage.getItem(userTokenKey);
@@ -36,13 +36,13 @@ const withAuth = <T extends object>(
           });
           if (res.data) {
             dispatch({ type: ActionTypes.UpdateUser, payload: res.data });
-            setChecking(false);
+            setLoading(false);
             localStorage.setItem(userShowBalanceKey, "true");
           } else {
             logout();
           }
         } else {
-          setChecking(false);
+          setLoading(false);
         }
       } else {
         logout();
@@ -54,7 +54,7 @@ const withAuth = <T extends object>(
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    if (checking) {
+    if (loading) {
       return <h3>Loading... Please wait</h3>;
     }
 
