@@ -85,9 +85,9 @@ const Budgeting = () => {
   
   // Load current budget data
   const loadBudgets = useCallback(async () => {
-    // Prevent loading if already loading, has error, or already loaded for current period
-    if (budgetLoading || (hasLoaded && !isInitialLoad)) {
-      console.log('🚫 Skipping load - already loading or loaded');
+    // Prevent loading if already loading
+    if (budgetLoading) {
+      console.log('🚫 Skipping load - already loading');
       return;
     }
 
@@ -129,25 +129,23 @@ const Budgeting = () => {
       });
       setBudgetData([]);
     }
-  }, []);
+  }, [getBudgets, convertBudgetsToFrontend, budgetLoading, toast]);
   
 
 
-  // Load data on component mount and when month/year changes
+  // Load data and categories on component mount and when month/year changes
   useEffect(() => {
-    console.log('🔄 Month/Year changed, loading budgets:', { selectedMonth, selectedYear });
+    console.log('🔄 Loading data for period:', { selectedMonth, selectedYear });
+    
+    // Reset states
     setHasLoaded(false);
     setHasError(false);
     setIsEmpty(false);
-    setIsInitialLoad(false); // Not initial load when month/year changes
-    loadBudgets();
-  }, [selectedMonth, selectedYear]);
-
-  // Load categories when month/year changes
-  useEffect(() => {
-    console.log('🔄 Loading categories for period:', { selectedMonth, selectedYear });
     
-    // Convert selectedMonth to number
+    // Load budgets
+    loadBudgets();
+    
+    // Load categories
     const monthMap: { [key: string]: number } = {
       january: 1, february: 2, march: 3, april: 4, may: 5, june: 6,
       july: 7, august: 8, september: 9, october: 10, november: 11, december: 12
@@ -167,7 +165,6 @@ const Budgeting = () => {
   // Initial load on component mount
   useEffect(() => {
     setIsInitialLoad(true);
-    loadBudgets();
   }, []);
 
   // Show toast error when budgetError or categoriesError occurs
@@ -218,10 +215,8 @@ const Budgeting = () => {
           description: `${successCount} budget berhasil disimpan!`
         });
         setIsAddModalOpen(false);
-        // Reset states and reload
+        // Reset states - useEffect will handle reload
         setHasLoaded(false);
-        setIsInitialLoad(true);
-        loadBudgets();
       } else {
         toast({
           title: "Error",
@@ -253,10 +248,8 @@ const Budgeting = () => {
           title: "Berhasil",
           description: 'Budget berhasil dihapus!'
         });
-        // Reset states and reload
+        // Reset states - useEffect will handle reload
         setHasLoaded(false);
-        setIsInitialLoad(true);
-        loadBudgets();
       } else {
         toast({
           title: "Error",
@@ -308,10 +301,8 @@ const Budgeting = () => {
         });
           setIsEditModalOpen(false);
           setSelectedBudget(null);
-          // Reset states and reload
+          // Reset states - useEffect will handle reload
           setHasLoaded(false);
-          setIsInitialLoad(true);
-          loadBudgets();
         } else {
           toast({
             title: "Error",
