@@ -154,7 +154,7 @@ const useBudgetSummaryAPI = (onUnauthorized?: () => void) => {
     const toDate = `${year}-${month}-${String(lastDay).padStart(2, '0')}`;
     
     return await fetchBudgetSummary(fromDate, toDate);
-  }, [fetchBudgetSummary]);
+  }, []);
 
   // Get current month budget performance
   const fetchCurrentMonthPerformance = useCallback(async (): Promise<BudgetPerformanceResult | null> => {
@@ -167,7 +167,7 @@ const useBudgetSummaryAPI = (onUnauthorized?: () => void) => {
     const toDate = `${year}-${month}-${String(lastDay).padStart(2, '0')}`;
     
     return await fetchBudgetPerformance(fromDate, toDate);
-  }, [fetchBudgetPerformance]);
+  }, []);
 
   // Get budget summary for specific month
   const fetchMonthlyBudgetSummary = useCallback(async (
@@ -180,7 +180,7 @@ const useBudgetSummaryAPI = (onUnauthorized?: () => void) => {
     const toDate = `${year}-${monthStr}-${String(lastDay).padStart(2, '0')}`;
     
     return await fetchBudgetSummary(fromDate, toDate);
-  }, [fetchBudgetSummary]);
+  }, []);
 
   // Get budget performance for specific month
   const fetchMonthlyBudgetPerformance = useCallback(async (
@@ -193,7 +193,7 @@ const useBudgetSummaryAPI = (onUnauthorized?: () => void) => {
     const toDate = `${year}-${monthStr}-${String(lastDay).padStart(2, '0')}`;
     
     return await fetchBudgetPerformance(fromDate, toDate);
-  }, [fetchBudgetPerformance]);
+  }, []);
 
   // Get budget performance statistics
   const getBudgetStatistics = useCallback((performance: BudgetPerformanceData[]) => {

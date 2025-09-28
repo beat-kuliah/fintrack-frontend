@@ -22,7 +22,7 @@ import useTransactions, { Transaction, TransactionFilters, CreateTransactionData
 import useExpenseAnalytics, { CategorySummary, TrendData } from "@/components/hooks/useExpenseAnalytics"
 import usePockets, { Account } from "@/components/hooks/usePockets"
 import useLogout from "@/components/hooks/useLogout"
-import useBudgetCategories from "@/components/hooks/useBudgetCategories"
+// Removed useBudgetCategories import as budgeting feature is removed
 
 // Updated interface to match API response
 interface ExpenseEntry {
@@ -135,12 +135,10 @@ const Expense = () => {
     getActiveAccounts
   } = usePockets(logout)
   
-  const {
-    categories,
-    loading: categoriesLoading,
-    error: categoriesError,
-    fetchBudgetCategories
-  } = useBudgetCategories(logout)
+  // Static categories since budgeting feature is removed
+  const categories = ["Food", "Transportation", "Entertainment", "Shopping", "Bills", "Healthcare", "Other"]
+  const categoriesLoading = false
+  const categoriesError = null
 
   // State management
   const [expenseData, setExpenseData] = useState<ExpenseEntry[]>([])
@@ -187,14 +185,12 @@ const Expense = () => {
     loadTransactions()
     loadExpenseSummary()
     loadAccounts()
-    fetchBudgetCategories()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, selectedCategory, selectedMonth, selectedYear])
   
-  // Load accounts and categories on component mount
+  // Load accounts on component mount
   useEffect(() => {
     loadAccounts()
-    fetchBudgetCategories()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   
@@ -216,10 +212,7 @@ const Expense = () => {
     if (analyticsError) {
       toast.error(`Analytics Error: ${analyticsError}`)
     }
-    if (categoriesError) {
-      toast.error(`Categories Error: ${categoriesError}`)
-    }
-  }, [transactionsError, analyticsError, categoriesError])
+  }, [transactionsError, analyticsError])
 
   // Load transactions with current filters
   const loadTransactions = async () => {

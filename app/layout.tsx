@@ -10,8 +10,8 @@ export const metadata: Metadata = {
     default: "Finbest - Financial Management App",
     template: "%s | Finbest"
   },
-  description: "Finbest is a comprehensive financial management app that helps you track expenses, manage budgets, and achieve your financial goals with ease.",
-  keywords: ["finance", "budget", "expense tracker", "money management", "financial planning"],
+  description: "Finbest is a comprehensive financial management app that helps you track expenses and achieve your financial goals with ease.",
+  keywords: ["finance", "expense tracker", "money management", "financial planning"],
   authors: [{ name: "Finbest Team" }],
   creator: "Finbest",
   publisher: "Finbest",
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "Finbest - Financial Management App",
-    description: "Track expenses, manage budgets, and achieve your financial goals with Finbest.",
+    description: "Track expenses and achieve your financial goals with Finbest.",
     url: 'https://finbest.app',
     siteName: 'Finbest',
     locale: 'en_US',
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: "Finbest - Financial Management App",
-    description: "Track expenses, manage budgets, and achieve your financial goals with Finbest.",
+    description: "Track expenses and achieve your financial goals with Finbest.",
   },
   robots: {
     index: true,

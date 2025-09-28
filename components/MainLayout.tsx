@@ -194,7 +194,7 @@ const MainLayout: FC<{ children: React.ReactNode }> = ({ children }) => {
                       Financial Overview
                     </h1>
                     <p className="text-blue-700 text-sm sm:text-base">
-                      Track your expenses and manage your budget
+                      Track your expenses and financial activities
                     </p>
                   </div>
                 </div>
@@ -333,7 +333,7 @@ const MainLayout: FC<{ children: React.ReactNode }> = ({ children }) => {
                           </div>
                           <div className="grid grid-cols-2 gap-4 text-sm">
                             <div>
-                              <span className="text-gray-500 block">Budget</span>
+                              <span className="text-gray-500 block">Allocated</span>
                               <span className="font-medium text-gray-800">
                                 Rp{item.allocation.toLocaleString()}
                               </span>
@@ -374,7 +374,7 @@ const MainLayout: FC<{ children: React.ReactNode }> = ({ children }) => {
                             Category
                           </th>
                           <th className="text-left p-4 font-semibold text-cyan-800 text-sm">
-                            Budget
+                            Allocated
                           </th>
                           <th className="text-left p-4 font-semibold text-cyan-800 text-sm">
                             Spent

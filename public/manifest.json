@@ -1,7 +1,7 @@
 {
   "name": "Finbest - Financial Management App",
   "short_name": "Finbest",
-  "description": "Track expenses, manage budgets, and achieve your financial goals with Finbest.",
+  "description": "Track expenses and achieve your financial goals with Finbest.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -51,18 +51,7 @@
         }
       ]
     },
-    {
-      "name": "View Budget",
-      "short_name": "Budget",
-      "description": "Check your budget status",
-      "url": "/budgeting",
-      "icons": [
-        {
-          "src": "/favicon.ico",
-          "sizes": "96x96"
-        }
-      ]
-    }
+
   ],
   "prefer_related_applications": false,
   "edge_side_panel": {

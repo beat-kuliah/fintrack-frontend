@@ -1,5 +1,5 @@
-const baseUrl = "http://192.168.2.11:8000";
-// const baseUrl = "http://localhost:8000";
+// const baseUrl = "http://192.168.2.11:8000";
+const baseUrl = "http://localhost:8000";
 // const baseUrl = "https://fintrack-api.beatfraps.com";
 
 export const authUrl = {
@@ -44,4 +44,13 @@ export const incomeAnalyticsUrl = {
   recent: baseUrl + "/income-analytics/recent",
 };
 
-export const budgetUrl = baseUrl + "/budgets";
+export const budgetUrl = {
+  list: baseUrl + "/budgets",
+  create: baseUrl + "/budgets",
+  get: baseUrl + "/budgets/" + ":id",
+  update: baseUrl + "/budgets/" + ":id",
+  delete: baseUrl + "/budgets/" + ":id",
+  summary: baseUrl + "/budgets/summary",
+  performance: baseUrl + "/budgets/performance",
+  categories: baseUrl + "/budgets/categories",
+};

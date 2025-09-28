@@ -20,7 +20,6 @@ import { Separator } from "@/components/ui/separator"
 import useTransactions, { Transaction, TransactionFilters, CreateTransactionData } from "@/components/hooks/useTransactions"
 import useIncomeAnalytics, { CategorySummary, TrendData } from "@/components/hooks/useIncomeAnalytics"
 import usePockets, { Account } from "@/components/hooks/usePockets"
-import useLogout from "@/components/hooks/useLogout"
 
 // Updated interface to match API response
 interface IncomeEntry {
@@ -119,9 +118,6 @@ const categories = [
 // Available accounts will be loaded from API
 
 const Income = () => {
-  // Logout hook for authorization
-  const { logout } = useLogout();
-  
   // API hooks
   const { 
     loading: transactionsLoading, 
@@ -130,7 +126,7 @@ const Income = () => {
     createTransaction, 
     updateTransaction, 
     deleteTransaction 
-  } = useTransactions(logout)
+  } = useTransactions()
   
   const { 
     loading: analyticsLoading, 
@@ -138,11 +134,11 @@ const Income = () => {
     getIncomeSummary,
     getCategoryBreakdown,
     getMonthlyTrends
-  } = useIncomeAnalytics(logout)
+  } = useIncomeAnalytics()
   
   const {
     getActiveAccounts
-  } = usePockets(logout)
+  } = usePockets()
 
   // State management
   const [incomeData, setIncomeData] = useState<IncomeEntry[]>([])

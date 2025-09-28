@@ -5,9 +5,9 @@ import {
   Building2,
   DollarSign,
   Home,
-  PieChart,
   Receipt,
   LogOut,
+  Wallet,
 } from "lucide-react";
 
 import {
@@ -35,11 +35,6 @@ const navigationItems = [
     icon: Home,
   },
   {
-    title: "Budgeting",
-    url: "/budgeting",
-    icon: PieChart,
-  },
-  {
       title: "Expense",
       url: "/expense",
     icon: Receipt,
@@ -53,6 +48,11 @@ const navigationItems = [
     title: "Accounts",
     url: "/accounts",
     icon: Building2,
+  },
+  {
+    title: "Budget",
+    url: "/budgeting",
+    icon: Wallet,
   },
   // {
   //   title: "Portfolio",

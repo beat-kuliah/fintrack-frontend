@@ -34,7 +34,6 @@ import useAxiosHandler from "@/utils/axiosHandler"
 import { pocketUrl, userUrl } from "@/utils/network"
 import { userShowBalanceKey } from "@/utils/contants"
 import { toast } from "react-toastify"
-import useLogout from "@/components/hooks/useLogout"
 
 // Define the account type based on API response
 interface ApiAccount {
@@ -80,8 +79,7 @@ const colors = [
 ]
 
 const Accounts = () => {
-  const { logout } = useLogout();
-  const { axiosHandler } = useAxiosHandler(logout);
+  const { axiosHandler } = useAxiosHandler();
   const [accounts, setAccounts] = useState<Account[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)

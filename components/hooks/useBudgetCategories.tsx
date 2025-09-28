@@ -1,6 +1,7 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import createBudgetService from '@/utils/budgetService';
 import useAxiosHandler from '@/utils/axiosHandler';
+import { toast } from '@/components/ui/use-toast';
 
 // Category configuration with predefined types and colors
 export interface CategoryConfig {
@@ -157,7 +158,7 @@ const DEFAULT_CATEGORY_CONFIGS: Record<string, CategoryConfig> = {
 
 const useBudgetCategories = (onUnauthorized?: () => void) => {
   const { axiosHandler } = useAxiosHandler(onUnauthorized);
-  const budgetService = createBudgetService(axiosHandler);
+  const budgetService = useMemo(() => createBudgetService(axiosHandler), [axiosHandler]);
   const [categories, setCategories] = useState<string[]>([]);
   const [categoryConfigs, setCategoryConfigs] = useState<Record<string, CategoryConfig>>({});
   const [loading, setLoading] = useState(false);
@@ -207,17 +208,22 @@ const useBudgetCategories = (onUnauthorized?: () => void) => {
   }, [categoryConfigs]);
 
   // Fetch budget categories from API
-  const fetchBudgetCategories = useCallback(async (): Promise<string[]> => {
+  const fetchBudgetCategories = useCallback(async (periodStart?: string, periodEnd?: string): Promise<string[]> => {
     setLoading(true);
     setError(null);
     
     try {
-      const result = await budgetService.getBudgetCategories();
+      const result = await budgetService.getBudgetCategories(periodStart, periodEnd);
       setCategories(result);
       return result;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch budget categories';
+      const errorMessage = err instanceof Error ? err.message : 'Gagal memuat kategori budget';
       setError(errorMessage);
+      toast({
+        title: "Error",
+        description: `Gagal memuat kategori budget: ${errorMessage}`,
+        variant: "destructive"
+      });
       return [];
     } finally {
       setLoading(false);
@@ -319,10 +325,7 @@ const useBudgetCategories = (onUnauthorized?: () => void) => {
     };
   }, [getCategoriesWithConfig]);
 
-  // Load categories on mount
-  useEffect(() => {
-    fetchBudgetCategories();
-  }, [fetchBudgetCategories]);
+  // Note: Categories will be loaded when fetchBudgetCategories is called with period parameters
 
   return {
     categories,

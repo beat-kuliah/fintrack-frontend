@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
-import { toast } from "sonner"
+import { toast } from "@/components/ui/use-toast"
 import BudgetForm from "@/components/BudgetForm"
 import useBudgetAPI, { BudgetCategory, MonthlyBudget } from "@/components/hooks/useBudgetAPI"
 import { BudgetRequest } from "@/utils/budgetService"
@@ -29,6 +29,12 @@ const Budgeting = () => {
   const [isAddingBudget, setIsAddingBudget] = useState(false);
   const [isEditingBudget, setIsEditingBudget] = useState(false);
   const [isDeletingBudget, setIsDeletingBudget] = useState(false);
+  
+  // Additional state for proper loading management
+  const [hasLoaded, setHasLoaded] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const [isEmpty, setIsEmpty] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   
   // Date selection
   const [selectedMonth, setSelectedMonth] = useState<string>(() => {
@@ -53,7 +59,6 @@ const Budgeting = () => {
   } = useBudgetAPI(logout);
   
   const {
-    categories,
     loading: categoriesLoading,
     error: categoriesError,
     fetchBudgetCategories,
@@ -79,15 +84,25 @@ const Budgeting = () => {
   }
   
   // Load current budget data
-  const loadBudgets = useCallback(async (retryCount = 0) => {
+  const loadBudgets = useCallback(async () => {
+    // Prevent loading if already loading, has error, or already loaded for current period
+    if (budgetLoading || (hasLoaded && !isInitialLoad)) {
+      console.log('🚫 Skipping load - already loading or loaded');
+      return;
+    }
+
     try {
-      console.log('🔍 Loading budgets... (attempt:', retryCount + 1, ')');
+      setHasError(false);
+      
       const budgets = await getBudgets();
       console.log('📊 Raw API response:', budgets);
       
       if (!budgets || !Array.isArray(budgets)) {
         console.warn('⚠️ Invalid budget response format');
         setBudgetData([]);
+        setIsEmpty(true);
+        setHasLoaded(true);
+        setIsInitialLoad(false);
         return;
       }
       
@@ -95,38 +110,86 @@ const Budgeting = () => {
       console.log('🔄 Converted budget:', convertedBudget);
       console.log('📋 Categories to set:', convertedBudget.categories);
       
-      setBudgetData(convertedBudget.categories || []);
+      const categories = convertedBudget.categories || [];
+      setBudgetData(categories);
+      setIsEmpty(categories.length === 0);
+      setHasLoaded(true);
+      setIsInitialLoad(false);
       console.log('✅ Budget data set successfully');
     } catch (error) {
       console.error('❌ Error loading budget:', error);
       
-      // Retry logic for network errors
-      if (retryCount < 2 && error instanceof Error && error.message.includes('Network')) {
-        console.log('🔄 Retrying budget load...');
-        setTimeout(() => loadBudgets(retryCount + 1), 1000 * (retryCount + 1));
-        return;
-      }
-      
-      toast.error(`Gagal memuat data budget: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setHasError(true);
+      setHasLoaded(true);
+      setIsInitialLoad(false);
+      toast({
+        title: "Error",
+        description: `Gagal memuat data budget: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        variant: "destructive"
+      });
       setBudgetData([]);
     }
-  }, [getBudgets, convertBudgetsToFrontend]);
+  }, []);
   
+
+
   // Load data on component mount and when month/year changes
   useEffect(() => {
-    console.log('🔄 useEffect triggered - selectedMonth:', selectedMonth, 'selectedYear:', selectedYear);
-    if (!budgetLoading && !categoriesLoading) {
-      loadBudgets();
-    }
-  }, [selectedMonth, selectedYear, loadBudgets, budgetLoading, categoriesLoading]);
-  
-  // Load categories only once on component mount
+    console.log('🔄 Month/Year changed, loading budgets:', { selectedMonth, selectedYear });
+    setHasLoaded(false);
+    setHasError(false);
+    setIsEmpty(false);
+    setIsInitialLoad(false); // Not initial load when month/year changes
+    loadBudgets();
+  }, [selectedMonth, selectedYear]);
+
+  // Load categories when month/year changes
   useEffect(() => {
-    console.log('🔄 Loading categories on mount');
-    if (!categoriesLoading && categories.length === 0) {
-      fetchBudgetCategories();
+    console.log('🔄 Loading categories for period:', { selectedMonth, selectedYear });
+    
+    // Convert selectedMonth to number
+    const monthMap: { [key: string]: number } = {
+      january: 1, february: 2, march: 3, april: 4, may: 5, june: 6,
+      july: 7, august: 8, september: 9, october: 10, november: 11, december: 12
+    };
+    
+    const monthNumber = monthMap[selectedMonth];
+    const lastDay = new Date(selectedYear, monthNumber, 0).getDate();
+    
+    const periodStart = `${selectedYear}-${String(monthNumber).padStart(2, '0')}-01`;
+    const periodEnd = `${selectedYear}-${String(monthNumber).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+    
+    console.log('📅 Period parameters:', { periodStart, periodEnd });
+    
+    fetchBudgetCategories(periodStart, periodEnd);
+  }, [selectedMonth, selectedYear, fetchBudgetCategories]);
+
+  // Initial load on component mount
+  useEffect(() => {
+    setIsInitialLoad(true);
+    loadBudgets();
+  }, []);
+
+  // Show toast error when budgetError or categoriesError occurs
+  useEffect(() => {
+    if (budgetError) {
+      toast({
+        title: "Error",
+        description: `Error budget: ${budgetError}`,
+        variant: "destructive"
+      });
     }
-  }, [fetchBudgetCategories, categoriesLoading, categories.length]);
+  }, [budgetError]);
+
+  useEffect(() => {
+    if (categoriesError) {
+      toast({
+        title: "Error",
+        description: `Error kategori: ${categoriesError}`,
+        variant: "destructive"
+      });
+    }
+  }, [categoriesError]);
   
   // Handle save budget (create/update)
   const handleSaveBudget = async (budgetData: Omit<MonthlyBudget, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -150,15 +213,29 @@ const Budgeting = () => {
       const successCount = results.filter(result => result !== null).length;
       
       if (successCount > 0) {
-        toast.success(`${successCount} budget berhasil disimpan!`);
+        toast({
+          title: "Berhasil",
+          description: `${successCount} budget berhasil disimpan!`
+        });
         setIsAddModalOpen(false);
+        // Reset states and reload
+        setHasLoaded(false);
+        setIsInitialLoad(true);
         loadBudgets();
       } else {
-        toast.error('Gagal menyimpan budget');
+        toast({
+          title: "Error",
+          description: 'Gagal menyimpan budget',
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error('Error saving budget:', error);
-      toast.error('Gagal menyimpan budget');
+      toast({
+        title: "Error",
+        description: `Gagal menyimpan budget: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        variant: "destructive"
+      });
     } finally {
       setIsAddingBudget(false);
     }
@@ -172,14 +249,28 @@ const Budgeting = () => {
     try {
       const result = await deleteBudget(parseInt(budgetId));
       if (result) {
-        toast.success('Budget berhasil dihapus!');
+        toast({
+          title: "Berhasil",
+          description: 'Budget berhasil dihapus!'
+        });
+        // Reset states and reload
+        setHasLoaded(false);
+        setIsInitialLoad(true);
         loadBudgets();
       } else {
-        toast.error('Gagal menghapus budget');
+        toast({
+          title: "Error",
+          description: 'Gagal menghapus budget',
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error('Error deleting budget:', error);
-      toast.error('Gagal menghapus budget');
+      toast({
+        title: "Error",
+        description: `Gagal menghapus budget: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        variant: "destructive"
+      });
     } finally {
       setIsDeletingBudget(false);
     }
@@ -211,17 +302,31 @@ const Budgeting = () => {
         
         const result = await updateBudget(parseInt(selectedBudget.id), budgetRequest);
         if (result) {
-          toast.success('Budget berhasil diupdate!');
+          toast({
+          title: "Berhasil",
+          description: 'Budget berhasil diupdate!'
+        });
           setIsEditModalOpen(false);
           setSelectedBudget(null);
+          // Reset states and reload
+          setHasLoaded(false);
+          setIsInitialLoad(true);
           loadBudgets();
         } else {
-          toast.error('Gagal mengupdate budget');
+          toast({
+            title: "Error",
+            description: 'Gagal mengupdate budget',
+            variant: "destructive"
+          });
         }
       }
     } catch (error) {
       console.error('Error updating budget:', error);
-      toast.error('Gagal mengupdate budget');
+      toast({
+          title: "Error",
+          description: `Gagal mengupdate budget: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          variant: "destructive"
+        });
     } finally {
       setIsEditingBudget(false);
     }
@@ -286,17 +391,7 @@ const Budgeting = () => {
               </div>
             </motion.div>
 
-            {/* Error Messages */}
-            {(budgetError || categoriesError) && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4"
-              >
-                {budgetError && <div>Budget: {budgetError}</div>}
-                {categoriesError && <div>Categories: {categoriesError}</div>}
-              </motion.div>
-            )}
+
 
             {/* Add Button and Loading */}
             <motion.div
@@ -354,20 +449,36 @@ const Budgeting = () => {
                   console.log('🎯 Current budgetData state:', budgetData);
                   console.log('📊 budgetData.length:', budgetData.length);
                   console.log('⏳ budgetLoading:', budgetLoading);
+                  console.log('❌ hasError:', hasError);
+                  console.log('📭 isEmpty:', isEmpty);
+                  console.log('🔄 hasLoaded:', hasLoaded);
                   return null;
                 })()}
-                {budgetLoading ? (
+                {budgetLoading && !hasLoaded ? (
                   <div className="p-8 text-center">
                     <div className="flex items-center justify-center gap-2">
                       <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
                       <span className="text-gray-500">Loading budget data...</span>
                     </div>
                   </div>
-                ) : budgetData.length === 0 ? (
+                ) : hasError ? (
+                  <div className="p-8 text-center text-red-500">
+                    <div className="mb-4">❌</div>
+                    <div className="font-medium mb-2">Gagal memuat data budget</div>
+                    <div className="text-sm text-gray-500 mb-4">Terjadi kesalahan saat mengambil data dari server</div>
+                  </div>
+                ) : isEmpty || budgetData.length === 0 ? (
                   <div className="p-8 text-center text-gray-500">
                     <div className="mb-2">📊</div>
-                    <div className="font-medium mb-1">No budgets found</div>
-                    <div className="text-sm">Create your first budget for {selectedMonth} {selectedYear}</div>
+                    <div className="font-medium mb-1">Tidak ada budget ditemukan</div>
+                    <div className="text-sm mb-4">Buat budget pertama Anda untuk {selectedMonth} {selectedYear}</div>
+                    <Button 
+                      onClick={() => setIsAddModalOpen(true)} 
+                      size="sm" 
+                      className="bg-blue-500 hover:bg-blue-600 text-white"
+                    >
+                      <Plus className="h-4 w-4 mr-2" /> Buat Budget
+                    </Button>
                   </div>
                 ) : (
                   budgetData.map((budget, index) => {
@@ -426,31 +537,29 @@ const Budgeting = () => {
       </div>
 
       {/* Add Budget Modal */}
-      {isAddModalOpen && (
-        <BudgetForm
-          onSave={handleSaveBudget}
-          loading={isAddingBudget}
-          availableCategories={categories}
-        />
-      )}
+      <BudgetForm
+        open={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onSave={handleSaveBudget}
+        loading={isAddingBudget}
+      />
 
       {/* Edit Budget Modal */}
-      {isEditModalOpen && selectedBudget && (
-        <BudgetForm
-          initialBudget={{
-            id: 'edit-budget',
-            month: selectedMonth,
-            year: selectedYear,
-            totalIncome: 0,
-            categories: [selectedBudget],
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          }}
-          onSave={handleEditBudget}
-          loading={isEditingBudget}
-          availableCategories={categories}
-        />
-      )}
+      <BudgetForm
+        open={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        initialBudget={selectedBudget ? {
+          id: 'edit-budget',
+          month: selectedMonth,
+          year: selectedYear,
+          totalIncome: 0,
+          categories: [selectedBudget],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        } : null}
+        onSave={handleEditBudget}
+        loading={isEditingBudget}
+      />
     </div>
   );
 };

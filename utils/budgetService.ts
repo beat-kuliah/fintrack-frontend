@@ -76,7 +76,7 @@ class BudgetService {
     try {
       const response = await this.axiosHandler<BudgetResponse>({
         method: 'POST',
-        url: budgetUrl,
+        url: budgetUrl.create,
         data: budgetData,
         isAuthorized: true,
       });
@@ -97,7 +97,7 @@ class BudgetService {
     try {
       const response = await this.axiosHandler<BudgetListResponse>({
         method: 'GET',
-        url: budgetUrl,
+        url: budgetUrl.list,
         isAuthorized: true,
       });
 
@@ -117,7 +117,7 @@ class BudgetService {
     try {
       const response = await this.axiosHandler<BudgetResponse>({
         method: 'GET',
-        url: `${budgetUrl}/${id}`,
+        url: `${budgetUrl.get}/${id}`,
         isAuthorized: true,
       });
 
@@ -137,7 +137,7 @@ class BudgetService {
     try {
       const response = await this.axiosHandler<BudgetResponse>({
         method: 'PUT',
-        url: `${budgetUrl}/${id}`,
+        url: `${budgetUrl.update}/${id}`,
         data: budgetData,
         isAuthorized: true,
       });
@@ -158,7 +158,7 @@ class BudgetService {
     try {
       const response = await this.axiosHandler<DeleteBudgetResponse>({
         method: 'DELETE',
-        url: `${budgetUrl}/${id}`,
+        url: `${budgetUrl.delete}/${id}`,
         isAuthorized: true,
       });
 
@@ -181,7 +181,7 @@ class BudgetService {
       if (toDate) params.append('to_date', toDate);
       
       const queryString = params.toString();
-      const url = queryString ? `${budgetUrl}/summary?${queryString}` : `${budgetUrl}/summary`;
+      const url = queryString ? `${budgetUrl.summary}?${queryString}` : `${budgetUrl.summary}`;
 
       const response = await this.axiosHandler<BudgetSummaryResponse>({
         method: 'GET',
@@ -208,7 +208,7 @@ class BudgetService {
       if (toDate) params.append('to_date', toDate);
       
       const queryString = params.toString();
-      const url = queryString ? `${budgetUrl}/performance?${queryString}` : `${budgetUrl}/performance`;
+      const url = queryString ? `${budgetUrl.performance}?${queryString}` : `${budgetUrl.performance}`;
 
       const response = await this.axiosHandler<BudgetPerformanceResponse>({
         method: 'GET',
@@ -228,11 +228,21 @@ class BudgetService {
   }
 
   // 32. GET /budgets/categories - Get user's budget categories
-  async getBudgetCategories(): Promise<string[]> {
+  async getBudgetCategories(periodStart?: string, periodEnd?: string): Promise<string[]> {
     try {
+      const params = new URLSearchParams();
+      if (periodStart) params.append('period_start', periodStart);
+      if (periodEnd) params.append('period_end', periodEnd);
+      
+      const queryString = params.toString();
+      const url = queryString ? `${budgetUrl.categories}?${queryString}` : `${budgetUrl.categories}`;
+
+      console.log('🔗 Calling budget categories API:', url);
+      console.log('📅 Period parameters:', { periodStart, periodEnd });
+
       const response = await this.axiosHandler<BudgetCategoriesResponse>({
         method: 'GET',
-        url: `${budgetUrl}/categories`,
+        url,
         isAuthorized: true,
       });
 

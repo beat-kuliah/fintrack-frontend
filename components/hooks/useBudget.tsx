@@ -211,7 +211,7 @@ const useBudget = (onUnauthorized?: () => void) => {
       
       const response = await axiosHandler<MonthlyBudget>({
         method: 'POST',
-        url: budgetUrl,
+        url: budgetUrl.create,
         data: finalBudgetData,
         isAuthorized: true,
       });
@@ -238,7 +238,7 @@ const useBudget = (onUnauthorized?: () => void) => {
     try {
       const response = await axiosHandler<BudgetCategory>({
         method: 'POST',
-        url: `${budgetUrl}/${budgetId}/categories`,
+        url: `${budgetUrl.list}/${budgetId}/categories`,
         data: category,
         isAuthorized: true,
       });
@@ -265,7 +265,7 @@ const useBudget = (onUnauthorized?: () => void) => {
     try {
       const response = await axiosHandler<void>({
         method: 'DELETE',
-        url: `${budgetUrl}/${budgetId}/categories/${categoryId}`,
+        url: `${budgetUrl.list}/${budgetId}/categories/${categoryId}`,
         isAuthorized: true,
       });
       
@@ -351,7 +351,7 @@ const useBudget = (onUnauthorized?: () => void) => {
     try {
       const response = await axiosHandler<MonthlyBudget[]>({
         method: 'GET',
-        url: `${budgetUrl}/history?limit=${limit}`,
+        url: `${budgetUrl.list}/history?limit=${limit}`,
         isAuthorized: true,
       });
       
