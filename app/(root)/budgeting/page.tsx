@@ -162,7 +162,7 @@ const Budgeting = () => {
     console.log('📅 Period parameters:', { periodStart, periodEnd });
     
     fetchBudgetCategories(periodStart, periodEnd);
-  }, [selectedMonth, selectedYear, fetchBudgetCategories]);
+  }, [selectedMonth, selectedYear]);
 
   // Initial load on component mount
   useEffect(() => {
