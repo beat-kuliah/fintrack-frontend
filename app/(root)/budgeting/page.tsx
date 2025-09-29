@@ -215,8 +215,8 @@ const Budgeting = () => {
           description: `${successCount} budget berhasil disimpan!`
         });
         setIsAddModalOpen(false);
-        // Reset states - useEffect will handle reload
-        setHasLoaded(false);
+        // Immediately reload budget data
+        await loadBudgets();
       } else {
         toast({
           title: "Error",
@@ -248,8 +248,8 @@ const Budgeting = () => {
           title: "Berhasil",
           description: 'Budget berhasil dihapus!'
         });
-        // Reset states - useEffect will handle reload
-        setHasLoaded(false);
+        // Immediately reload budget data
+        await loadBudgets();
       } else {
         toast({
           title: "Error",
@@ -301,8 +301,8 @@ const Budgeting = () => {
         });
           setIsEditModalOpen(false);
           setSelectedBudget(null);
-          // Reset states - useEffect will handle reload
-          setHasLoaded(false);
+          // Immediately reload budget data
+          await loadBudgets();
         } else {
           toast({
             title: "Error",

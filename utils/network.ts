@@ -48,7 +48,7 @@ export const budgetUrl = {
   list: baseUrl + "/budgets",
   create: baseUrl + "/budgets",
   get: baseUrl + "/budgets/" + ":id",
-  update: baseUrl + "/budgets/" + ":id",
+  update: baseUrl + "/budgets",
   delete: baseUrl + "/budgets/" + ":id",
   summary: baseUrl + "/budgets/summary",
   performance: baseUrl + "/budgets/performance",
